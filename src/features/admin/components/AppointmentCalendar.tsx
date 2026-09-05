@@ -1,4 +1,7 @@
-import React from 'react'
+import React, {
+    useEffect,
+    useState,
+} from 'react'
 
 import {
     Box,
@@ -57,8 +60,69 @@ const DAY_NAMES = [
     'Sat',
 ]
 
+const MOBILE_DAY_NAMES = [
+    'S',
+    'M',
+    'T',
+    'W',
+    'T',
+    'F',
+    'S',
+]
+
 const BASE_START_HOUR = 8
 const BASE_END_HOUR = 18
+
+// ============================================================
+// MOBILE DETECTION
+// ============================================================
+
+function useIsMobile() {
+    const getMatches =
+        () =>
+            typeof window !==
+                'undefined' &&
+            window.matchMedia(
+                '(max-width: 767px)',
+            ).matches
+
+    const [isMobile, setIsMobile] =
+        useState(getMatches)
+
+    useEffect(() => {
+        const mediaQuery =
+            window.matchMedia(
+                '(max-width: 767px)',
+            )
+
+        const handleChange =
+            (
+                event: MediaQueryListEvent,
+            ) => {
+                setIsMobile(
+                    event.matches,
+                )
+            }
+
+        setIsMobile(
+            mediaQuery.matches,
+        )
+
+        mediaQuery.addEventListener(
+            'change',
+            handleChange,
+        )
+
+        return () => {
+            mediaQuery.removeEventListener(
+                'change',
+                handleChange,
+            )
+        }
+    }, [])
+
+    return isMobile
+}
 
 // ============================================================
 // DATE HELPERS
@@ -192,16 +256,9 @@ function toDateString(
     return `${year}-${month}-${day}`
 }
 
-/**
- * Safely converts YYYY-MM-DD into a LOCAL Date.
- *
- * Do not use:
- *
- * new Date("2026-09-05")
- *
- * because JavaScript treats that format as UTC,
- * which can shift the date depending on timezone.
- */
+// ============================================================
+// FORMAT HELPERS
+// ============================================================
 
 function formatMonthYear(
     date: Date,
@@ -231,7 +288,7 @@ function formatFullDate(
             date.getTime(),
         )
     ) {
-        return 'Invalid date'
+        return 'Date unavailable'
     }
 
     return date.toLocaleDateString(
@@ -413,6 +470,9 @@ function CalendarHeader({
         view: CalendarView,
     ) => void
 }) {
+    const isMobile =
+        useIsMobile()
+
     const goPrevious =
         () => {
             const next =
@@ -541,13 +601,24 @@ function CalendarHeader({
     }
 
     return (
-        <Stack gap="md">
+        <Stack
+            gap={
+                isMobile
+                    ? 'sm'
+                    : 'md'
+            }
+        >
             {/* TOP ROW */}
 
             <Group
                 justify="space-between"
                 align="center"
-                wrap="wrap"
+                wrap={
+                    isMobile
+                        ? 'wrap'
+                        : 'nowrap'
+                }
+                gap="sm"
             >
                 {/* NAVIGATION */}
 
@@ -556,7 +627,11 @@ function CalendarHeader({
                         variant="subtle"
                         color="gray"
                         radius="md"
-                        size="sm"
+                        size={
+                            isMobile
+                                ? 'xs'
+                                : 'sm'
+                        }
                         onClick={
                             goToday
                         }
@@ -567,7 +642,11 @@ function CalendarHeader({
                     <Button
                         variant="default"
                         radius="md"
-                        size="sm"
+                        size={
+                            isMobile
+                                ? 'xs'
+                                : 'sm'
+                        }
                         px="xs"
                         onClick={
                             goPrevious
@@ -575,14 +654,22 @@ function CalendarHeader({
                         aria-label="Previous"
                     >
                         <IconChevronLeft
-                            size={17}
+                            size={
+                                isMobile
+                                    ? 16
+                                    : 17
+                            }
                         />
                     </Button>
 
                     <Button
                         variant="default"
                         radius="md"
-                        size="sm"
+                        size={
+                            isMobile
+                                ? 'xs'
+                                : 'sm'
+                        }
                         px="xs"
                         onClick={
                             goNext
@@ -590,7 +677,11 @@ function CalendarHeader({
                         aria-label="Next"
                     >
                         <IconChevronRight
-                            size={17}
+                            size={
+                                isMobile
+                                    ? 16
+                                    : 17
+                            }
                         />
                     </Button>
                 </Group>
@@ -599,88 +690,105 @@ function CalendarHeader({
 
                 <Text
                     fw={800}
-                    size="lg"
+                    size={
+                        isMobile
+                            ? 'md'
+                            : 'lg'
+                    }
                     style={{
                         textAlign:
                             'center',
+                        flex: isMobile
+                            ? 1
+                            : undefined,
+                        minWidth: 0,
                     }}
                 >
                     {title}
                 </Text>
+            </Group>
 
-                {/* VIEW SWITCHER */}
+            {/* VIEW SWITCHER */}
 
-                <Group
-                    gap={4}
-                    p={4}
-                    style={{
-                        border:
-                            '1px solid #E9E5DF',
-                        borderRadius: 10,
-                        background:
-                            '#FAF8F5',
-                    }}
-                >
-                    {(
-                        [
-                            'month',
-                            'week',
-                            'day',
-                        ] as CalendarView[]
-                    ).map(
-                        (
-                            calendarView,
-                        ) => {
-                            const active =
-                                view ===
-                                calendarView
+            <Group
+                gap={4}
+                p={4}
+                justify="center"
+                style={{
+                    width: '100%',
+                    border:
+                        '1px solid #E9E5DF',
+                    borderRadius: 10,
+                    background:
+                        '#FAF8F5',
+                }}
+            >
+                {(
+                    [
+                        'month',
+                        'week',
+                        'day',
+                    ] as CalendarView[]
+                ).map(
+                    (
+                        calendarView,
+                    ) => {
+                        const active =
+                            view ===
+                            calendarView
 
-                            return (
-                                <Button
-                                    key={
-                                        calendarView
-                                    }
-                                    variant={
-                                        active
-                                            ? 'filled'
-                                            : 'subtle'
-                                    }
-                                    color={
-                                        active
-                                            ? 'blue'
-                                            : 'gray'
-                                    }
-                                    radius="md"
-                                    size="xs"
-                                    onClick={() =>
-                                        onViewChange(
-                                            calendarView,
-                                        )
-                                    }
-                                >
-                                    {calendarView
-                                        .charAt(
-                                            0,
-                                        )
-                                        .toUpperCase() +
-                                        calendarView.slice(
-                                            1,
-                                        )}
-                                </Button>
-                            )
-                        },
-                    )}
-                </Group>
+                        return (
+                            <Button
+                                key={
+                                    calendarView
+                                }
+                                variant={
+                                    active
+                                        ? 'filled'
+                                        : 'subtle'
+                                }
+                                color={
+                                    active
+                                        ? 'blue'
+                                        : 'gray'
+                                }
+                                radius="md"
+                                size={
+                                    isMobile
+                                        ? 'xs'
+                                        : 'sm'
+                                }
+                                onClick={() =>
+                                    onViewChange(
+                                        calendarView,
+                                    )
+                                }
+                                style={{
+                                    flex: 1,
+                                }}
+                            >
+                                {calendarView
+                                    .charAt(
+                                        0,
+                                    )
+                                    .toUpperCase() +
+                                    calendarView.slice(
+                                        1,
+                                    )}
+                            </Button>
+                        )
+                    },
+                )}
             </Group>
         </Stack>
     )
 }
 
 // ============================================================
-// MONTH VIEW
+// MONTH VIEW - DESKTOP
 // ============================================================
 
-function MonthView({
+function DesktopMonthView({
     appointments,
     currentDate,
     onAppointmentClick,
@@ -746,8 +854,6 @@ function MonthView({
 
     return (
         <Box>
-            {/* WEEKDAY HEADER */}
-
             <SimpleGrid
                 cols={7}
                 spacing={0}
@@ -776,8 +882,6 @@ function MonthView({
                         </Box>
                     ),
                 )}
-
-                {/* DAYS */}
 
                 {days.map(
                     (day) => {
@@ -849,8 +953,6 @@ function MonthView({
                                             : 'default',
                                 }}
                             >
-                                {/* DATE */}
-
                                 <Group
                                     justify="space-between"
                                     mb="xs"
@@ -885,8 +987,6 @@ function MonthView({
                                     )}
                                 </Group>
 
-                                {/* APPOINTMENTS */}
-
                                 <Stack gap={4}>
                                     {visibleAppointments.map(
                                         (
@@ -908,8 +1008,6 @@ function MonthView({
                                             />
                                         ),
                                     )}
-
-                                    {/* MORE */}
 
                                     {overflowCount >
                                         0 && (
@@ -943,6 +1041,302 @@ function MonthView({
                     },
                 )}
             </SimpleGrid>
+        </Box>
+    )
+}
+
+// ============================================================
+// MONTH VIEW - MOBILE
+// ============================================================
+
+function MobileMonthView({
+    appointments,
+    currentDate,
+    onMoreClick,
+    onDateChange,
+    onViewChange,
+}: {
+    appointments: AdminAppointment[]
+    currentDate: Date
+    onAppointmentClick: (
+        appointment: AdminAppointment,
+    ) => void
+    onMoreClick?: (
+        date: Date,
+        appointments: AdminAppointment[],
+    ) => void
+    onDateChange: (
+        date: Date,
+    ) => void
+    onViewChange: (
+        view: CalendarView,
+    ) => void
+}) {
+    const monthStart =
+        startOfMonth(
+            currentDate,
+        )
+
+    const monthEnd =
+        endOfMonth(
+            currentDate,
+        )
+
+    const gridStart =
+        startOfWeek(
+            monthStart,
+        )
+
+    const gridEnd =
+        endOfWeek(
+            monthEnd,
+        )
+
+    const totalDays =
+        Math.round(
+            (gridEnd.getTime() -
+                gridStart.getTime()) /
+                86400000,
+        ) + 1
+
+    const days =
+        Array.from(
+            {
+                length:
+                    totalDays,
+            },
+            (_, index) =>
+                addDays(
+                    gridStart,
+                    index,
+                ),
+        )
+
+    return (
+        <Box>
+            {/* WEEKDAY HEADER */}
+
+            <SimpleGrid
+                cols={7}
+                spacing={0}
+            >
+                {MOBILE_DAY_NAMES.map(
+                    (day, index) => (
+                        <Box
+                            key={`${day}-${index}`}
+                            py={8}
+                            style={{
+                                borderBottom:
+                                    '1px solid #E9E5DF',
+                                background:
+                                    '#FAF8F5',
+                            }}
+                        >
+                            <Text
+                                size="xs"
+                                fw={800}
+                                c="dimmed"
+                                ta="center"
+                            >
+                                {day}
+                            </Text>
+                        </Box>
+                    ),
+                )}
+
+                {/* DAYS */}
+
+                {days.map(
+                    (day) => {
+                        const dayAppointments =
+                            getAppointmentsForDate(
+                                appointments,
+                                day,
+                            )
+
+                        const isCurrentMonth =
+                            day.getMonth() ===
+                                currentDate.getMonth() &&
+                            day.getFullYear() ===
+                                currentDate.getFullYear()
+
+                        const isToday =
+                            isSameDay(
+                                day,
+                                new Date(),
+                            )
+
+                        const hasAppointments =
+                            dayAppointments.length >
+                            0
+
+                        return (
+                            <Box
+                                key={toDateString(
+                                    day,
+                                )}
+                                onClick={() => {
+                                    if (
+                                        hasAppointments
+                                    ) {
+                                        onMoreClick?.(
+                                            day,
+                                            dayAppointments,
+                                        )
+                                    } else {
+                                        onDateChange(
+                                            day,
+                                        )
+
+                                        onViewChange(
+                                            'day',
+                                        )
+                                    }
+                                }}
+                                style={{
+                                    minHeight: 62,
+                                    borderRight:
+                                        '1px solid #E9E5DF',
+                                    borderBottom:
+                                        '1px solid #E9E5DF',
+                                    background:
+                                        isCurrentMonth
+                                            ? '#FFFFFF'
+                                            : '#FAF8F5',
+                                    cursor: 'pointer',
+                                    position:
+                                        'relative',
+                                }}
+                            >
+                                <Stack
+                                    align="center"
+                                    gap={3}
+                                    py={7}
+                                >
+                                    {/* DATE */}
+
+                                    <Box
+                                        w={29}
+                                        h={29}
+                                        style={{
+                                            borderRadius:
+                                                '50%',
+                                            display:
+                                                'flex',
+                                            alignItems:
+                                                'center',
+                                            justifyContent:
+                                                'center',
+                                            background:
+                                                isToday
+                                                    ? '#228BE6'
+                                                    : 'transparent',
+                                        }}
+                                    >
+                                        <Text
+                                            size="xs"
+                                            fw={
+                                                isToday
+                                                    ? 800
+                                                    : 600
+                                            }
+                                            c={
+                                                isToday
+                                                    ? 'white'
+                                                    : isCurrentMonth
+                                                      ? 'dark'
+                                                      : 'dimmed'
+                                            }
+                                        >
+                                            {day.getDate()}
+                                        </Text>
+                                    </Box>
+
+                                    {/* APPOINTMENT INDICATORS */}
+
+                                    {hasAppointments ? (
+                                        <Group
+                                            gap={3}
+                                            justify="center"
+                                            wrap="nowrap"
+                                        >
+                                            {dayAppointments
+                                                .slice(
+                                                    0,
+                                                    3,
+                                                )
+                                                .map(
+                                                    (
+                                                        appointment,
+                                                    ) => (
+                                                        <Box
+                                                            key={
+                                                                appointment.id
+                                                            }
+                                                            w={5}
+                                                            h={5}
+                                                            style={{
+                                                                borderRadius:
+                                                                    '50%',
+                                                                background:
+                                                                    '#228BE6',
+                                                            }}
+                                                        />
+                                                    ),
+                                                )}
+                                        </Group>
+                                    ) : (
+                                        <Box
+                                            h={5}
+                                        />
+                                    )}
+
+                                    {dayAppointments.length >
+                                        3 && (
+                                        <Text
+                                            size="8px"
+                                            fw={700}
+                                            c="blue"
+                                            lh={1}
+                                        >
+                                            +
+                                            {dayAppointments.length -
+                                                3}
+                                        </Text>
+                                    )}
+                                </Stack>
+                            </Box>
+                        )
+                    },
+                )}
+            </SimpleGrid>
+
+            {/* MOBILE LEGEND */}
+
+            <Group
+                justify="center"
+                gap="xs"
+                mt="sm"
+            >
+                <Box
+                    w={6}
+                    h={6}
+                    style={{
+                        borderRadius:
+                            '50%',
+                        background:
+                            '#228BE6',
+                    }}
+                />
+
+                <Text
+                    size="xs"
+                    c="dimmed"
+                >
+                    Tap a date to view
+                    appointments
+                </Text>
+            </Group>
         </Box>
     )
 }
@@ -1230,7 +1624,11 @@ function DayView({
             type="auto"
             offsetScrollbars
         >
-            <Box>
+            <Box
+                style={{
+                    minWidth: 0,
+                }}
+            >
                 {/* DAY HEADER */}
 
                 <Box
@@ -1292,7 +1690,7 @@ function DayView({
                                 {/* TIME */}
 
                                 <Box
-                                    w={110}
+                                    w={95}
                                     p="sm"
                                     style={{
                                         flexShrink: 0,
@@ -1335,6 +1733,7 @@ function DayView({
                                     p="sm"
                                     style={{
                                         flex: 1,
+                                        minWidth: 0,
                                         minHeight: 100,
                                         borderBottom:
                                             '1px solid #E9E5DF',
@@ -1403,6 +1802,9 @@ export default function AppointmentCalendar({
     onAppointmentClick,
     onMoreClick,
 }: AppointmentCalendarProps) {
+    const isMobile =
+        useIsMobile()
+
     return (
         <Paper
             radius="xl"
@@ -1415,7 +1817,9 @@ export default function AppointmentCalendar({
                     '#FFFFFF',
             }}
         >
-            <Box p="md">
+            <Box
+                p="md"
+            >
                 <CalendarHeader
                     currentDate={
                         currentDate
@@ -1434,28 +1838,50 @@ export default function AppointmentCalendar({
                 />
 
                 {view ===
-                    'month' && (
-                    <MonthView
-                        appointments={
-                            appointments
-                        }
-                        currentDate={
-                            currentDate
-                        }
-                        onAppointmentClick={
-                            onAppointmentClick
-                        }
-                        onMoreClick={
-                            onMoreClick
-                        }
-                        onDateChange={
-                            onDateChange
-                        }
-                        onViewChange={
-                            onViewChange
-                        }
-                    />
-                )}
+                    'month' &&
+                    (isMobile ? (
+                        <MobileMonthView
+                            appointments={
+                                appointments
+                            }
+                            currentDate={
+                                currentDate
+                            }
+                            onAppointmentClick={
+                                onAppointmentClick
+                            }
+                            onMoreClick={
+                                onMoreClick
+                            }
+                            onDateChange={
+                                onDateChange
+                            }
+                            onViewChange={
+                                onViewChange
+                            }
+                        />
+                    ) : (
+                        <DesktopMonthView
+                            appointments={
+                                appointments
+                            }
+                            currentDate={
+                                currentDate
+                            }
+                            onAppointmentClick={
+                                onAppointmentClick
+                            }
+                            onMoreClick={
+                                onMoreClick
+                            }
+                            onDateChange={
+                                onDateChange
+                            }
+                            onViewChange={
+                                onViewChange
+                            }
+                        />
+                    ))}
 
                 {view ===
                     'week' && (

@@ -5,13 +5,11 @@ import {
     Stack,
     Text,
 } from '@mantine/core'
-
 import {
     IconCalendarEvent,
     IconClock,
 } from '@tabler/icons-react'
-
-import { motion } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 
 import type { AdminAppointment } from '../services/appointmentAdminService'
 
@@ -151,6 +149,9 @@ export default function CalendarDayAppointmentCard({
     onClick,
     compact = false,
 }: CalendarDayAppointmentCardProps) {
+    const shouldReduceMotion =
+        useReducedMotion()
+
     const status =
         getStatusConfig(
             appointment.status,
@@ -176,33 +177,63 @@ export default function CalendarDayAppointmentCard({
             appointment.time,
         )
 
+    const appointmentLabel =
+        `${patientName}, ${serviceName}, ${formattedTime}, ${status.label}`
+
     return (
         <motion.div
-            initial={{
-                opacity: 0,
-                y: 4,
-            }}
-            animate={{
-                opacity: 1,
-                y: 0,
-            }}
-            whileHover={{
-                y: -1,
-                scale: 1.01,
-            }}
+            initial={
+                shouldReduceMotion
+                    ? false
+                    : {
+                          opacity: 0,
+                          y: 4,
+                      }
+            }
+            animate={
+                shouldReduceMotion
+                    ? undefined
+                    : {
+                          opacity: 1,
+                          y: 0,
+                      }
+            }
+            whileHover={
+                shouldReduceMotion
+                    ? undefined
+                    : {
+                          y: -1,
+                          scale: 1.01,
+                      }
+            }
             transition={{
                 duration: 0.16,
             }}
+            style={{
+                width: '100%',
+            }}
         >
             <Box
+                component="button"
+                type="button"
                 onClick={onClick}
                 p={
                     compact
                         ? 'xs'
                         : 'sm'
                 }
+                aria-label={`View appointment: ${appointmentLabel}`}
                 style={{
+                    display: 'block',
+                    width: '100%',
+                    minWidth: 0,
+                    minHeight: compact
+                        ? 48
+                        : 56,
                     cursor: 'pointer',
+                    textAlign: 'left',
+                    fontFamily:
+                        'inherit',
                     border:
                         '1px solid #E9E5DF',
                     borderLeft:
@@ -216,50 +247,92 @@ export default function CalendarDayAppointmentCard({
                     overflow:
                         'hidden',
                     transition:
-                        'box-shadow 160ms ease, border-color 160ms ease',
+                        'box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease',
+                    WebkitTapHighlightColor:
+                        'transparent',
                 }}
             >
                 {compact ? (
-                    <Stack gap={3}>
+                    <Stack
+                        gap={3}
+                        style={{
+                            minWidth: 0,
+                        }}
+                    >
                         <Text
                             size="xs"
                             fw={700}
                             truncate
+                            style={{
+                                minWidth: 0,
+                            }}
                         >
                             {patientName}
                         </Text>
 
-                        <Text
-                            size="xs"
-                            c="dimmed"
-                            truncate
+                        <Group
+                            gap={4}
+                            wrap="nowrap"
+                            style={{
+                                minWidth: 0,
+                            }}
                         >
-                            {formattedTime}
-                        </Text>
+                            <IconClock
+                                size={12}
+                                stroke={1.8}
+                                style={{
+                                    flexShrink: 0,
+                                }}
+                            />
+
+                            <Text
+                                size="xs"
+                                c="dimmed"
+                                truncate
+                                style={{
+                                    minWidth: 0,
+                                }}
+                            >
+                                {formattedTime}
+                            </Text>
+                        </Group>
                     </Stack>
                 ) : (
-                    <Stack gap="xs">
+                    <Stack
+                        gap="xs"
+                        style={{
+                            minWidth: 0,
+                        }}
+                    >
                         <Group
                             justify="space-between"
                             align="flex-start"
                             wrap="nowrap"
+                            gap="xs"
                         >
                             <Group
                                 gap={6}
                                 wrap="nowrap"
                                 style={{
                                     minWidth: 0,
+                                    flex: 1,
                                 }}
                             >
                                 <IconCalendarEvent
                                     size={15}
                                     stroke={1.8}
+                                    style={{
+                                        flexShrink: 0,
+                                    }}
                                 />
 
                                 <Text
                                     size="sm"
                                     fw={700}
                                     truncate
+                                    style={{
+                                        minWidth: 0,
+                                    }}
                                 >
                                     {patientName}
                                 </Text>
@@ -285,21 +358,32 @@ export default function CalendarDayAppointmentCard({
                         <Group
                             gap="xs"
                             wrap="wrap"
+                            style={{
+                                minWidth: 0,
+                            }}
                         >
                             <Group
                                 gap={4}
                                 wrap="nowrap"
+                                style={{
+                                    flexShrink: 0,
+                                }}
                             >
                                 <IconClock
                                     size={14}
                                     stroke={1.8}
+                                    style={{
+                                        flexShrink: 0,
+                                    }}
                                 />
 
                                 <Text
                                     size="xs"
                                     c="dimmed"
                                 >
-                                    {formattedTime}
+                                    {
+                                        formattedTime
+                                    }
                                 </Text>
                             </Group>
 
@@ -307,8 +391,15 @@ export default function CalendarDayAppointmentCard({
                                 size="xs"
                                 c="dimmed"
                                 truncate
+                                style={{
+                                    minWidth: 0,
+                                    flex: 1,
+                                }}
                             >
-                                • {serviceName}
+                                •{' '}
+                                {
+                                    serviceName
+                                }
                             </Text>
                         </Group>
                     </Stack>

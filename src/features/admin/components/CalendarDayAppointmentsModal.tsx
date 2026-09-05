@@ -5,6 +5,7 @@ import {
     Divider,
     Group,
     Modal,
+    ScrollArea,
     Stack,
     Text,
     ThemeIcon,
@@ -223,7 +224,10 @@ export default function CalendarDayAppointmentsModal({
             size="lg"
             radius="xl"
             title={
-                <Group gap="sm">
+                <Group
+                    gap="sm"
+                    wrap="nowrap"
+                >
                     <ThemeIcon
                         size={38}
                         radius="xl"
@@ -236,7 +240,11 @@ export default function CalendarDayAppointmentsModal({
                         />
                     </ThemeIcon>
 
-                    <Box>
+                    <Box
+                        style={{
+                            minWidth: 0,
+                        }}
+                    >
                         <Text
                             fw={800}
                             size="lg"
@@ -249,6 +257,7 @@ export default function CalendarDayAppointmentsModal({
                             size="xs"
                             c="dimmed"
                             mt={3}
+                            truncate
                         >
                             {displayDate}
                         </Text>
@@ -259,9 +268,27 @@ export default function CalendarDayAppointmentsModal({
                 backgroundOpacity: 0.45,
                 blur: 4,
             }}
+            styles={{
+                content: {
+                    maxHeight:
+                        'calc(100dvh - 24px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                },
+
+                body: {
+                    overflow: 'hidden',
+                },
+            }}
         >
-            <Stack gap="md">
+            <Stack
+                gap="md"
+                style={{
+                    minHeight: 0,
+                }}
+            >
                 {/* SUMMARY */}
+
                 <Box>
                     <Text
                         size="sm"
@@ -286,6 +313,7 @@ export default function CalendarDayAppointmentsModal({
                 <Divider />
 
                 {/* APPOINTMENTS */}
+
                 {sortedAppointments.length ===
                 0 ? (
                     <Box
@@ -323,237 +351,257 @@ export default function CalendarDayAppointmentsModal({
                         </Text>
                     </Box>
                 ) : (
-                    <Box
+                    <ScrollArea
+                        type="auto"
+                        offsetScrollbars
+                        scrollbarSize={6}
                         style={{
-                            maxHeight: 500,
-                            overflowY: 'auto',
-                            paddingRight: 6,
+                            maxHeight:
+                                'min(500px, calc(100dvh - 260px))',
                         }}
                     >
-                        <Stack gap="sm">
-                            {sortedAppointments.map(
-                                (
-                                    appointment,
-                                    index,
-                                ) => {
-                                    const status =
-                                        getStatusConfig(
-                                            appointment.status,
-                                        )
+                        <Box
+                            pr="xs"
+                        >
+                            <Stack gap="sm">
+                                {sortedAppointments.map(
+                                    (
+                                        appointment,
+                                        index,
+                                    ) => {
+                                        const status =
+                                            getStatusConfig(
+                                                appointment.status,
+                                            )
 
-                                    const accent =
-                                        getStatusAccent(
-                                            appointment.status,
-                                        )
+                                        const accent =
+                                            getStatusAccent(
+                                                appointment.status,
+                                            )
 
-                                    const patientName =
-                                        getPatientName(
-                                            appointment,
-                                        )
+                                        const patientName =
+                                            getPatientName(
+                                                appointment,
+                                            )
 
-                                    const serviceName =
-                                        getServiceName(
-                                            appointment,
-                                        )
+                                        const serviceName =
+                                            getServiceName(
+                                                appointment,
+                                            )
 
-                                    const formattedTime =
-                                        formatTime(
-                                            appointment.time,
-                                        )
+                                        const formattedTime =
+                                            formatTime(
+                                                appointment.time,
+                                            )
 
-                                    return (
-                                        <motion.div
-                                            key={
-                                                appointment.id
-                                            }
-                                            initial={{
-                                                opacity: 0,
-                                                y: 8,
-                                            }}
-                                            animate={{
-                                                opacity: 1,
-                                                y: 0,
-                                            }}
-                                            transition={{
-                                                duration: 0.2,
-                                                delay:
-                                                    index *
-                                                    0.03,
-                                            }}
-                                        >
-                                            <Box
-                                                onClick={() =>
-                                                    onAppointmentClick(
-                                                        appointment,
-                                                    )
+                                        return (
+                                            <motion.div
+                                                key={
+                                                    appointment.id
                                                 }
-                                                p="md"
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    border:
-                                                        '1px solid #E9E5DF',
-                                                    borderLeft:
-                                                        `4px solid ${accent}`,
-                                                    borderRadius: 14,
-                                                    background:
-                                                        '#FFFFFF',
-                                                    transition:
-                                                        'all 160ms ease',
+                                                initial={{
+                                                    opacity: 0,
+                                                    y: 8,
                                                 }}
-                                                onMouseEnter={(
-                                                    event,
-                                                ) => {
-                                                    event.currentTarget.style.transform =
-                                                        'translateY(-1px)'
-
-                                                    event.currentTarget.style.boxShadow =
-                                                        '0 8px 24px rgba(0, 0, 0, 0.06)'
+                                                animate={{
+                                                    opacity: 1,
+                                                    y: 0,
                                                 }}
-                                                onMouseLeave={(
-                                                    event,
-                                                ) => {
-                                                    event.currentTarget.style.transform =
-                                                        'translateY(0)'
-
-                                                    event.currentTarget.style.boxShadow =
-                                                        'none'
+                                                transition={{
+                                                    duration: 0.2,
+                                                    delay:
+                                                        index *
+                                                        0.03,
                                                 }}
                                             >
-                                                {/* TOP ROW */}
-                                                <Group
-                                                    justify="space-between"
-                                                    align="flex-start"
-                                                    wrap="nowrap"
+                                                <Box
+                                                    onClick={() =>
+                                                        onAppointmentClick(
+                                                            appointment,
+                                                        )
+                                                    }
+                                                    p="md"
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        border:
+                                                            '1px solid #E9E5DF',
+                                                        borderLeft:
+                                                            `4px solid ${accent}`,
+                                                        borderRadius: 14,
+                                                        background:
+                                                            '#FFFFFF',
+                                                        transition:
+                                                            'all 160ms ease',
+                                                    }}
+                                                    onMouseEnter={(
+                                                        event,
+                                                    ) => {
+                                                        event.currentTarget.style.transform =
+                                                            'translateY(-1px)'
+
+                                                        event.currentTarget.style.boxShadow =
+                                                            '0 8px 24px rgba(0, 0, 0, 0.06)'
+                                                    }}
+                                                    onMouseLeave={(
+                                                        event,
+                                                    ) => {
+                                                        event.currentTarget.style.transform =
+                                                            'translateY(0)'
+
+                                                        event.currentTarget.style.boxShadow =
+                                                            'none'
+                                                    }}
                                                 >
+                                                    {/* TOP ROW */}
+
                                                     <Group
-                                                        gap="sm"
+                                                        justify="space-between"
+                                                        align="flex-start"
                                                         wrap="nowrap"
-                                                        style={{
-                                                            minWidth: 0,
-                                                        }}
                                                     >
-                                                        <ThemeIcon
-                                                            size={
-                                                                42
-                                                            }
-                                                            radius="xl"
+                                                        <Group
+                                                            gap="sm"
+                                                            wrap="nowrap"
+                                                            style={{
+                                                                minWidth: 0,
+                                                                flex: 1,
+                                                            }}
+                                                        >
+                                                            <ThemeIcon
+                                                                size={
+                                                                    42
+                                                                }
+                                                                radius="xl"
+                                                                variant="light"
+                                                                color={
+                                                                    status.color
+                                                                }
+                                                                style={{
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            >
+                                                                <IconCalendarEvent
+                                                                    size={
+                                                                        19
+                                                                    }
+                                                                    stroke={
+                                                                        1.8
+                                                                    }
+                                                                />
+                                                            </ThemeIcon>
+
+                                                            <Box
+                                                                style={{
+                                                                    minWidth: 0,
+                                                                }}
+                                                            >
+                                                                <Text
+                                                                    fw={
+                                                                        750
+                                                                    }
+                                                                    size="sm"
+                                                                    truncate
+                                                                >
+                                                                    {
+                                                                        patientName
+                                                                    }
+                                                                </Text>
+
+                                                                <Text
+                                                                    size="xs"
+                                                                    c="dimmed"
+                                                                    mt={
+                                                                        3
+                                                                    }
+                                                                    truncate
+                                                                >
+                                                                    {
+                                                                        serviceName
+                                                                    }
+                                                                </Text>
+                                                            </Box>
+                                                        </Group>
+
+                                                        <Badge
+                                                            size="sm"
                                                             variant="light"
                                                             color={
                                                                 status.color
                                                             }
-                                                        >
-                                                            <IconCalendarEvent
-                                                                size={
-                                                                    19
-                                                                }
-                                                                stroke={
-                                                                    1.8
-                                                                }
-                                                            />
-                                                        </ThemeIcon>
-
-                                                        <Box
+                                                            radius="sm"
                                                             style={{
-                                                                minWidth: 0,
+                                                                flexShrink: 0,
                                                             }}
                                                         >
-                                                            <Text
-                                                                fw={
-                                                                    750
-                                                                }
-                                                                size="sm"
-                                                                truncate
-                                                            >
-                                                                {
-                                                                    patientName
-                                                                }
-                                                            </Text>
-
-                                                            <Text
-                                                                size="xs"
-                                                                c="dimmed"
-                                                                mt={
-                                                                    3
-                                                                }
-                                                                truncate
-                                                            >
-                                                                {
-                                                                    serviceName
-                                                                }
-                                                            </Text>
-                                                        </Box>
+                                                            {
+                                                                status.label
+                                                            }
+                                                        </Badge>
                                                     </Group>
 
-                                                    <Badge
-                                                        size="sm"
-                                                        variant="light"
-                                                        color={
-                                                            status.color
-                                                        }
-                                                        radius="sm"
-                                                    >
-                                                        {
-                                                            status.label
-                                                        }
-                                                    </Badge>
-                                                </Group>
+                                                    {/* DETAILS */}
 
-                                                {/* DETAILS */}
-                                                <Group
-                                                    gap="xs"
-                                                    mt="sm"
-                                                >
-                                                    <IconClock
-                                                        size={
-                                                            15
-                                                        }
-                                                        stroke={
-                                                            1.8
-                                                        }
-                                                    />
-
-                                                    <Text
-                                                        size="xs"
-                                                        fw={
-                                                            600
-                                                        }
-                                                        c="dimmed"
+                                                    <Group
+                                                        gap="xs"
+                                                        mt="sm"
+                                                        wrap="wrap"
                                                     >
-                                                        {
-                                                            formattedTime
-                                                        }
-                                                    </Text>
+                                                        <IconClock
+                                                            size={
+                                                                15
+                                                            }
+                                                            stroke={
+                                                                1.8
+                                                            }
+                                                        />
 
-                                                    <Text
-                                                        size="xs"
-                                                        c="dimmed"
-                                                    >
-                                                        •
-                                                    </Text>
+                                                        <Text
+                                                            size="xs"
+                                                            fw={
+                                                                600
+                                                            }
+                                                            c="dimmed"
+                                                        >
+                                                            {
+                                                                formattedTime
+                                                            }
+                                                        </Text>
 
-                                                    <Text
-                                                        size="xs"
-                                                        c="dimmed"
-                                                    >
-                                                        {
-                                                            appointment.duration
-                                                        }{' '}
-                                                        min
-                                                    </Text>
-                                                </Group>
-                                            </Box>
-                                        </motion.div>
-                                    )
-                                },
-                            )}
-                        </Stack>
-                    </Box>
+                                                        <Text
+                                                            size="xs"
+                                                            c="dimmed"
+                                                        >
+                                                            •
+                                                        </Text>
+
+                                                        <Text
+                                                            size="xs"
+                                                            c="dimmed"
+                                                        >
+                                                            {
+                                                                appointment.duration
+                                                            }{' '}
+                                                            min
+                                                        </Text>
+                                                    </Group>
+                                                </Box>
+                                            </motion.div>
+                                        )
+                                    },
+                                )}
+                            </Stack>
+                        </Box>
+                    </ScrollArea>
                 )}
 
                 {/* FOOTER */}
+
                 <Group
                     justify="flex-end"
                     pt="xs"
+                    style={{
+                        flexShrink: 0,
+                    }}
                 >
                     <Button
                         variant="light"
