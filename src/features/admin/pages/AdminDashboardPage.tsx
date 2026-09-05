@@ -5,8 +5,10 @@ import {
     Grid,
     Group,
     Loader,
+    Paper,
     Stack,
     Text,
+    ThemeIcon,
     Title,
 } from '@mantine/core'
 import {
@@ -16,6 +18,16 @@ import {
 } from 'react'
 
 import {
+    IconCalendar,
+    IconCalendarCheck,
+    IconClock,
+    IconSparkles,
+    IconUsers,
+} from '@tabler/icons-react'
+
+import { motion } from 'motion/react'
+
+import {
     subscribeToAppointments,
     type AdminAppointment,
 } from '../services/appointmentAdminService'
@@ -23,39 +35,121 @@ import {
 type StatCardProps = {
     label: string
     value: number
+    description: string
+    icon: React.ReactNode
+}
+
+const pageVariants = {
+    initial: {
+        opacity: 0,
+        y: 16,
+    },
+    animate: {
+        opacity: 1,
+        y: 0,
+    },
+}
+
+const pageTransition = {
+    duration: 0.4,
+    ease: 'easeOut' as const,
+}
+
+const staggerVariants = {
+    hidden: {},
+    visible: {
+        transition: {
+            staggerChildren: 0.08,
+        },
+    },
+}
+
+const itemVariants = {
+    hidden: {
+        opacity: 0,
+        y: 14,
+    },
+    visible: {
+        opacity: 1,
+        y: 0,
+    },
 }
 
 function StatCard({
     label,
     value,
+    description,
+    icon,
 }: StatCardProps) {
     return (
-        <Card
-            withBorder
-            radius="xl"
-            padding="lg"
+        <motion.div
+            variants={itemVariants}
+            style={{
+                height: '100%',
+            }}
         >
-            <Stack gap="xs">
-                <Text
-                    size="sm"
-                    c="dimmed"
+            <Card
+                withBorder
+                radius="xl"
+                padding="lg"
+                style={{
+                    height: '100%',
+                    borderColor:
+                        'var(--mantine-color-gray-2)',
+                    transition:
+                        'transform 180ms ease, box-shadow 180ms ease',
+                }}
+            >
+                <Group
+                    justify="space-between"
+                    align="flex-start"
+                    wrap="nowrap"
                 >
-                    {label}
-                </Text>
+                    <Stack
+                        gap="xs"
+                        style={{
+                            minWidth: 0,
+                        }}
+                    >
+                        <Text
+                            size="sm"
+                            c="dimmed"
+                            fw={600}
+                        >
+                            {label}
+                        </Text>
 
-                <Text
-                    fw={800}
-                    size="2rem"
-                    style={{
-                        lineHeight: 1,
-                        letterSpacing:
-                            '-0.04em',
-                    }}
-                >
-                    {value}
-                </Text>
-            </Stack>
-        </Card>
+                        <Text
+                            fw={800}
+                            size="2.25rem"
+                            style={{
+                                lineHeight: 1,
+                                letterSpacing:
+                                    '-0.05em',
+                            }}
+                        >
+                            {value}
+                        </Text>
+
+                        <Text
+                            size="xs"
+                            c="dimmed"
+                        >
+                            {description}
+                        </Text>
+                    </Stack>
+
+                    <ThemeIcon
+                        size={44}
+                        radius="xl"
+                        variant="light"
+                        color="smilehaos"
+                    >
+                        {icon}
+                    </ThemeIcon>
+                </Group>
+            </Card>
+        </motion.div>
     )
 }
 
@@ -282,390 +376,722 @@ function AdminDashboardPage() {
         }
 
     return (
-        <Container
-            size="xl"
-            py="md"
+        <motion.div
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            transition={pageTransition}
         >
-            <Stack gap="xl">
-                {/* HEADER */}
-                <Stack gap={4}>
-                    <Title
-                        order={1}
-                        style={{
-                            letterSpacing:
-                                '-0.04em',
-                        }}
+            <Container
+                size="xl"
+                py="xl"
+            >
+                <Stack gap="xl">
+
+                    {/* ================================================= */}
+                    {/* HEADER */}
+                    {/* ================================================= */}
+
+                    <motion.div
+                        variants={staggerVariants}
+                        initial="hidden"
+                        animate="visible"
                     >
-                        Dashboard
-                    </Title>
+                        <Stack gap="md">
 
-                    <Text c="dimmed">
-                        Overview of your
-                        clinic appointments.
-                    </Text>
-                </Stack>
-
-                {/* ERROR */}
-                {error && (
-                    <Card
-                        withBorder
-                        radius="lg"
-                    >
-                        <Text
-                            c="red"
-                            size="sm"
-                        >
-                            {error}
-                        </Text>
-                    </Card>
-                )}
-
-                {/* STATISTICS */}
-                <Grid>
-                    <Grid.Col
-                        span={{
-                            base: 6,
-                            sm: 6,
-                            md: 3,
-                        }}
-                    >
-                        <StatCard
-                            label="Today's appointments"
-                            value={
-                                todaysAppointments.length
-                            }
-                        />
-                    </Grid.Col>
-
-                    <Grid.Col
-                        span={{
-                            base: 6,
-                            sm: 6,
-                            md: 3,
-                        }}
-                    >
-                        <StatCard
-                            label="Pending"
-                            value={
-                                pendingCount
-                            }
-                        />
-                    </Grid.Col>
-
-                    <Grid.Col
-                        span={{
-                            base: 6,
-                            sm: 6,
-                            md: 3,
-                        }}
-                    >
-                        <StatCard
-                            label="Confirmed"
-                            value={
-                                confirmedCount
-                            }
-                        />
-                    </Grid.Col>
-
-                    <Grid.Col
-                        span={{
-                            base: 6,
-                            sm: 6,
-                            md: 3,
-                        }}
-                    >
-                        <StatCard
-                            label="This week"
-                            value={
-                                thisWeekCount
-                            }
-                        />
-                    </Grid.Col>
-                </Grid>
-
-                {/* TODAY */}
-                <Card
-                    withBorder
-                    radius="xl"
-                    padding="lg"
-                >
-                    <Stack gap="lg">
-                        {/* SECTION HEADER */}
-                        <Group
-                            justify="space-between"
-                            align="flex-start"
-                        >
-                            <Stack gap={2}>
-                                <Title
-                                    order={2}
-                                    size="1.25rem"
-                                >
-                                    Today's
-                                    appointments
-                                </Title>
-
-                                <Text
-                                    size="sm"
-                                    c="dimmed"
-                                >
-                                    {formatDate(
-                                        today,
-                                    )}
-                                </Text>
-                            </Stack>
-
-                            {!loading && (
-                                <Badge
-                                    variant="light"
-                                    color="smilehaos"
-                                    size="lg"
-                                >
-                                    {
-                                        todaysAppointments.length
-                                    }{' '}
-                                    appointment
-                                    {todaysAppointments.length !==
-                                        1 &&
-                                        's'}
-                                </Badge>
-                            )}
-                        </Group>
-
-                        {/* LOADING */}
-                        {loading ? (
-                            <Stack
-                                align="center"
-                                py="xl"
+                            <Group
+                                justify="space-between"
+                                align="flex-end"
+                                gap="xl"
                             >
-                                <Loader
-                                    color="smilehaos"
-                                />
-
-                                <Text
-                                    size="sm"
-                                    c="dimmed"
+                                <Stack
+                                    gap={4}
+                                    style={{
+                                        minWidth: 0,
+                                    }}
                                 >
-                                    Loading
-                                    appointments...
-                                </Text>
-                            </Stack>
-                        ) : todaysAppointments.length ===
-                          0 ? (
-                            /* EMPTY STATE */
-                            <Stack
-                                align="center"
-                                py="xl"
+                                    <Group
+                                        gap="xs"
+                                    >
+                                        <Badge
+                                            variant="light"
+                                            color="smilehaos"
+                                            radius="xl"
+                                        >
+                                            Admin dashboard
+                                        </Badge>
+                                    </Group>
+
+                                    <Title
+                                        order={1}
+                                        style={{
+                                            letterSpacing:
+                                                '-0.045em',
+                                        }}
+                                    >
+                                        Good day,
+                                        Doctor.
+                                    </Title>
+
+                                    <Text
+                                        c="dimmed"
+                                        size="sm"
+                                    >
+                                        Here’s what’s
+                                        happening at
+                                        SmileHaos Dental
+                                        Clinic today.
+                                    </Text>
+                                </Stack>
+
+                                <Paper
+                                    visibleFrom="sm"
+                                    withBorder
+                                    radius="xl"
+                                    px="md"
+                                    py="sm"
+                                    style={{
+                                        borderColor:
+                                            'var(--mantine-color-gray-2)',
+                                    }}
+                                >
+                                    <Group
+                                        gap="sm"
+                                    >
+                                        <ThemeIcon
+                                            size={34}
+                                            radius="xl"
+                                            variant="light"
+                                            color="smilehaos"
+                                        >
+                                            <IconCalendar
+                                                size={18}
+                                            />
+                                        </ThemeIcon>
+
+                                        <Stack gap={0}>
+                                            <Text
+                                                size="xs"
+                                                c="dimmed"
+                                                fw={600}
+                                            >
+                                                Today
+                                            </Text>
+
+                                            <Text
+                                                size="sm"
+                                                fw={700}
+                                            >
+                                                {new Date().toLocaleDateString(
+                                                    'en-US',
+                                                    {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric',
+                                                    },
+                                                )}
+                                            </Text>
+                                        </Stack>
+                                    </Group>
+                                </Paper>
+                            </Group>
+
+                        </Stack>
+                    </motion.div>
+
+                    {/* ================================================= */}
+                    {/* ERROR */}
+                    {/* ================================================= */}
+
+                    {error && (
+                        <motion.div
+                            variants={itemVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="md"
+                                style={{
+                                    borderColor:
+                                        'var(--mantine-color-red-2)',
+                                    background:
+                                        'var(--mantine-color-red-0)',
+                                }}
                             >
                                 <Text
-                                    size="2rem"
-                                >
-                                    🦷
-                                </Text>
-
-                                <Text
+                                    c="red"
+                                    size="sm"
                                     fw={600}
                                 >
-                                    No appointments
-                                    today
+                                    {error}
                                 </Text>
+                            </Card>
+                        </motion.div>
+                    )}
 
-                                <Text
-                                    size="sm"
-                                    c="dimmed"
-                                    ta="center"
+                    {/* ================================================= */}
+                    {/* STATISTICS */}
+                    {/* ================================================= */}
+
+                    <motion.div
+                        variants={staggerVariants}
+                        initial="hidden"
+                        animate="visible"
+                    >
+                        <Grid>
+                            <Grid.Col
+                                span={{
+                                    base: 6,
+                                    sm: 6,
+                                    md: 3,
+                                }}
+                            >
+                                <StatCard
+                                    label="Today"
+                                    value={
+                                        todaysAppointments.length
+                                    }
+                                    description="Appointments scheduled"
+                                    icon={
+                                        <IconCalendarCheck
+                                            size={22}
+                                            stroke={1.8}
+                                        />
+                                    }
+                                />
+                            </Grid.Col>
+
+                            <Grid.Col
+                                span={{
+                                    base: 6,
+                                    sm: 6,
+                                    md: 3,
+                                }}
+                            >
+                                <StatCard
+                                    label="Pending"
+                                    value={
+                                        pendingCount
+                                    }
+                                    description="Awaiting confirmation"
+                                    icon={
+                                        <IconClock
+                                            size={22}
+                                            stroke={1.8}
+                                        />
+                                    }
+                                />
+                            </Grid.Col>
+
+                            <Grid.Col
+                                span={{
+                                    base: 6,
+                                    sm: 6,
+                                    md: 3,
+                                }}
+                            >
+                                <StatCard
+                                    label="Confirmed"
+                                    value={
+                                        confirmedCount
+                                    }
+                                    description="Ready for treatment"
+                                    icon={
+                                        <IconSparkles
+                                            size={22}
+                                            stroke={1.8}
+                                        />
+                                    }
+                                />
+                            </Grid.Col>
+
+                            <Grid.Col
+                                span={{
+                                    base: 6,
+                                    sm: 6,
+                                    md: 3,
+                                }}
+                            >
+                                <StatCard
+                                    label="This week"
+                                    value={
+                                        thisWeekCount
+                                    }
+                                    description="Total appointments"
+                                    icon={
+                                        <IconUsers
+                                            size={22}
+                                            stroke={1.8}
+                                        />
+                                    }
+                                />
+                            </Grid.Col>
+                        </Grid>
+                    </motion.div>
+
+                    {/* ================================================= */}
+                    {/* TODAY'S APPOINTMENTS */}
+                    {/* ================================================= */}
+
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 18,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            duration: 0.45,
+                            delay: 0.15,
+                            ease: 'easeOut',
+                        }}
+                    >
+                        <Card
+                            withBorder
+                            radius="xl"
+                            padding="lg"
+                            style={{
+                                borderColor:
+                                    'var(--mantine-color-gray-2)',
+                            }}
+                        >
+                            <Stack gap="lg">
+
+                                {/* SECTION HEADER */}
+
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                    gap="md"
                                 >
-                                    There are no
-                                    appointments
-                                    scheduled
-                                    for today.
-                                </Text>
-                            </Stack>
-                        ) : (
-                            <Stack gap="sm">
-                                {todaysAppointments.map(
-                                    (
-                                        appointment,
-                                    ) => (
-                                        <Card
-                                            key={
-                                                appointment.id
-                                            }
-                                            withBorder
-                                            radius="lg"
-                                            padding="md"
+                                    <Group
+                                        gap="sm"
+                                        wrap="nowrap"
+                                    >
+                                        <ThemeIcon
+                                            size={44}
+                                            radius="xl"
+                                            variant="light"
+                                            color="smilehaos"
                                         >
-                                            {/* DESKTOP */}
-                                            <Group
-                                                justify="space-between"
-                                                align="center"
-                                                visibleFrom="sm"
-                                                wrap="nowrap"
+                                            <IconCalendar
+                                                size={21}
+                                                stroke={1.8}
+                                            />
+                                        </ThemeIcon>
+
+                                        <Stack
+                                            gap={2}
+                                            style={{
+                                                minWidth: 0,
+                                            }}
+                                        >
+                                            <Title
+                                                order={2}
+                                                size="1.25rem"
+                                                style={{
+                                                    letterSpacing:
+                                                        '-0.02em',
+                                                }}
                                             >
-                                                <Stack
-                                                    gap={2}
-                                                    style={{
-                                                        minWidth: 0,
-                                                        flex: 1,
+                                                Today’s
+                                                appointments
+                                            </Title>
+
+                                            <Text
+                                                size="sm"
+                                                c="dimmed"
+                                            >
+                                                {formatDate(
+                                                    today,
+                                                )}
+                                            </Text>
+                                        </Stack>
+                                    </Group>
+
+                                    {!loading && (
+                                        <Badge
+                                            variant="light"
+                                            color="smilehaos"
+                                            size="lg"
+                                            radius="xl"
+                                        >
+                                            {
+                                                todaysAppointments.length
+                                            }{' '}
+                                            appointment
+                                            {todaysAppointments.length !==
+                                                1 &&
+                                                's'}
+                                        </Badge>
+                                    )}
+                                </Group>
+
+                                {/* LOADING */}
+
+                                {loading ? (
+                                    <Stack
+                                        align="center"
+                                        justify="center"
+                                        py={60}
+                                    >
+                                        <Loader
+                                            color="smilehaos"
+                                            size="md"
+                                        />
+
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            Loading
+                                            appointments...
+                                        </Text>
+                                    </Stack>
+                                ) : todaysAppointments.length ===
+                                  0 ? (
+                                    /* EMPTY STATE */
+
+                                    <Paper
+                                        radius="xl"
+                                        p="xl"
+                                        style={{
+                                            background:
+                                                'var(--mantine-color-gray-0)',
+                                        }}
+                                    >
+                                        <Stack
+                                            align="center"
+                                            justify="center"
+                                            gap="sm"
+                                            py="xl"
+                                        >
+                                            <ThemeIcon
+                                                size={64}
+                                                radius="xl"
+                                                variant="light"
+                                                color="smilehaos"
+                                            >
+                                                <IconSparkles
+                                                    size={30}
+                                                    stroke={1.6}
+                                                />
+                                            </ThemeIcon>
+
+                                            <Text
+                                                fw={700}
+                                                size="lg"
+                                            >
+                                                Your schedule
+                                                is clear
+                                            </Text>
+
+                                            <Text
+                                                size="sm"
+                                                c="dimmed"
+                                                ta="center"
+                                                maw={420}
+                                            >
+                                                There are no
+                                                appointments
+                                                scheduled for
+                                                today.
+                                            </Text>
+                                        </Stack>
+                                    </Paper>
+                                ) : (
+                                    <Stack gap="sm">
+                                        {todaysAppointments.map(
+                                            (
+                                                appointment,
+                                                index,
+                                            ) => (
+                                                <motion.div
+                                                    key={
+                                                        appointment.id
+                                                    }
+                                                    initial={{
+                                                        opacity: 0,
+                                                        y: 10,
+                                                    }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        y: 0,
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.3,
+                                                        delay:
+                                                            index *
+                                                            0.05,
+                                                        ease: 'easeOut',
                                                     }}
                                                 >
-                                                    <Group
-                                                        gap="sm"
-                                                        wrap="nowrap"
-                                                    >
-                                                        <Text
-                                                            fw={700}
-                                                        >
-                                                            {
-                                                                appointment
-                                                                    .patient
-                                                                    .fullName
-                                                            }
-                                                        </Text>
-
-                                                        <Badge
-                                                            size="sm"
-                                                            variant="light"
-                                                            color={getStatusColor(
-                                                                appointment.status,
-                                                            )}
-                                                        >
-                                                            {
-                                                                appointment.status
-                                                            }
-                                                        </Badge>
-                                                    </Group>
-
-                                                    <Text
-                                                        size="sm"
-                                                        c="dimmed"
-                                                        truncate
-                                                    >
-                                                        {
-                                                            appointment.serviceName
-                                                        }
-                                                    </Text>
-                                                </Stack>
-
-                                                <Stack
-                                                    gap={2}
-                                                    align="flex-end"
-                                                >
-                                                    <Text
-                                                        fw={700}
-                                                    >
-                                                        {
-                                                            appointment.time
-                                                        }
-                                                    </Text>
-
-                                                    <Text
-                                                        size="xs"
-                                                        c="dimmed"
-                                                    >
-                                                        {
-                                                            appointment.duration
-                                                        }{' '}
-                                                        min
-                                                    </Text>
-                                                </Stack>
-                                            </Group>
-
-                                            {/* MOBILE */}
-                                            <Stack
-                                                gap="md"
-                                                hiddenFrom="sm"
-                                            >
-                                                <Group
-                                                    justify="space-between"
-                                                    align="flex-start"
-                                                    wrap="nowrap"
-                                                >
-                                                    <Stack
-                                                        gap={2}
+                                                    <Card
+                                                        withBorder
+                                                        radius="lg"
+                                                        padding="md"
                                                         style={{
-                                                            minWidth: 0,
+                                                            borderColor:
+                                                                'var(--mantine-color-gray-2)',
                                                         }}
                                                     >
-                                                        <Text
-                                                            fw={700}
+
+                                                        {/* DESKTOP */}
+
+                                                        <Group
+                                                            justify="space-between"
+                                                            align="center"
+                                                            visibleFrom="sm"
+                                                            wrap="nowrap"
+                                                            gap="lg"
                                                         >
-                                                            {
-                                                                appointment
-                                                                    .patient
-                                                                    .fullName
-                                                        }
-                                                        </Text>
+                                                            <Group
+                                                                gap="md"
+                                                                wrap="nowrap"
+                                                                style={{
+                                                                    flex: 1,
+                                                                    minWidth: 0,
+                                                                }}
+                                                            >
+                                                                <ThemeIcon
+                                                                    size={42}
+                                                                    radius="xl"
+                                                                    variant="light"
+                                                                    color="smilehaos"
+                                                                >
+                                                                    <IconUsers
+                                                                        size={20}
+                                                                        stroke={1.8}
+                                                                    />
+                                                                </ThemeIcon>
 
-                                                        <Text
-                                                            size="sm"
-                                                            c="dimmed"
-                                                            style={{
-                                                                wordBreak:
-                                                                    'break-word',
-                                                            }}
+                                                                <Stack
+                                                                    gap={3}
+                                                                    style={{
+                                                                        minWidth: 0,
+                                                                        flex: 1,
+                                                                    }}
+                                                                >
+                                                                    <Group
+                                                                        gap="sm"
+                                                                        wrap="nowrap"
+                                                                    >
+                                                                        <Text
+                                                                            fw={700}
+                                                                            truncate
+                                                                        >
+                                                                            {
+                                                                                appointment
+                                                                                    .patient
+                                                                                    .fullName
+                                                                            }
+                                                                        </Text>
+
+                                                                        <Badge
+                                                                            size="sm"
+                                                                            variant="light"
+                                                                            color={getStatusColor(
+                                                                                appointment.status,
+                                                                            )}
+                                                                            style={{
+                                                                                flexShrink: 0,
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                appointment.status
+                                                                            }
+                                                                        </Badge>
+                                                                    </Group>
+
+                                                                    <Text
+                                                                        size="sm"
+                                                                        c="dimmed"
+                                                                        truncate
+                                                                    >
+                                                                        {
+                                                                            appointment.serviceName
+                                                                        }
+                                                                    </Text>
+                                                                </Stack>
+                                                            </Group>
+
+                                                            <Group
+                                                                gap="xl"
+                                                                wrap="nowrap"
+                                                            >
+                                                                <Stack
+                                                                    gap={2}
+                                                                    align="flex-end"
+                                                                >
+                                                                    <Text
+                                                                        fw={700}
+                                                                    >
+                                                                        {
+                                                                            appointment.time
+                                                                        }
+                                                                    </Text>
+
+                                                                    <Text
+                                                                        size="xs"
+                                                                        c="dimmed"
+                                                                    >
+                                                                        {
+                                                                            appointment.duration
+                                                                        }{' '}
+                                                                        min
+                                                                    </Text>
+                                                                </Stack>
+
+                                                                <Text
+                                                                    fw={700}
+                                                                    miw={80}
+                                                                    ta="right"
+                                                                >
+                                                                    ₱
+                                                                    {appointment.price.toLocaleString()}
+                                                                </Text>
+                                                            </Group>
+                                                        </Group>
+
+                                                        {/* MOBILE */}
+
+                                                        <Stack
+                                                            gap="md"
+                                                            hiddenFrom="sm"
                                                         >
-                                                            {
-                                                                appointment.serviceName
-                                                            }
-                                                        </Text>
-                                                    </Stack>
+                                                            <Group
+                                                                justify="space-between"
+                                                                align="flex-start"
+                                                                wrap="nowrap"
+                                                            >
+                                                                <Group
+                                                                    gap="sm"
+                                                                    wrap="nowrap"
+                                                                    style={{
+                                                                        minWidth: 0,
+                                                                    }}
+                                                                >
+                                                                    <ThemeIcon
+                                                                        size={38}
+                                                                        radius="xl"
+                                                                        variant="light"
+                                                                        color="smilehaos"
+                                                                    >
+                                                                        <IconUsers
+                                                                            size={18}
+                                                                            stroke={1.8}
+                                                                        />
+                                                                    </ThemeIcon>
 
-                                                    <Badge
-                                                        size="sm"
-                                                        variant="light"
-                                                        color={getStatusColor(
-                                                            appointment.status,
-                                                        )}
-                                                    >
-                                                        {
-                                                            appointment.status
-                                                        }
-                                                    </Badge>
-                                                </Group>
+                                                                    <Stack
+                                                                        gap={2}
+                                                                        style={{
+                                                                            minWidth: 0,
+                                                                        }}
+                                                                    >
+                                                                        <Text
+                                                                            fw={700}
+                                                                        >
+                                                                            {
+                                                                                appointment
+                                                                                    .patient
+                                                                                    .fullName
+                                                                            }
+                                                                        </Text>
 
-                                                <Group
-                                                    justify="space-between"
-                                                    align="center"
-                                                >
-                                                    <Stack
-                                                        gap={0}
-                                                    >
-                                                        <Text
-                                                            fw={700}
-                                                        >
-                                                            {
-                                                                appointment.time
-                                                            }
-                                                        </Text>
+                                                                        <Text
+                                                                            size="sm"
+                                                                            c="dimmed"
+                                                                            style={{
+                                                                                overflowWrap:
+                                                                                    'anywhere',
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                appointment.serviceName
+                                                                            }
+                                                                        </Text>
+                                                                    </Stack>
+                                                                </Group>
 
-                                                        <Text
-                                                            size="xs"
-                                                            c="dimmed"
-                                                        >
-                                                            {
-                                                                appointment.duration
-                                                            }{' '}
-                                                            min
-                                                        </Text>
-                                                    </Stack>
+                                                                <Badge
+                                                                    size="sm"
+                                                                    variant="light"
+                                                                    color={getStatusColor(
+                                                                        appointment.status,
+                                                                    )}
+                                                                    style={{
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        appointment.status
+                                                                    }
+                                                                </Badge>
+                                                            </Group>
 
-                                                    <Text
-                                                        fw={700}
-                                                    >
-                                                        ₱
-                                                        {appointment.price.toLocaleString()}
-                                                    </Text>
-                                                </Group>
-                                            </Stack>
-                                        </Card>
-                                    ),
+                                                            <Paper
+                                                                radius="lg"
+                                                                p="sm"
+                                                                style={{
+                                                                    background:
+                                                                        'var(--mantine-color-gray-0)',
+                                                                }}
+                                                            >
+                                                                <Group
+                                                                    justify="space-between"
+                                                                    align="center"
+                                                                >
+                                                                    <Stack
+                                                                        gap={0}
+                                                                    >
+                                                                        <Text
+                                                                            fw={700}
+                                                                        >
+                                                                            {
+                                                                                appointment.time
+                                                                            }
+                                                                        </Text>
+
+                                                                        <Text
+                                                                            size="xs"
+                                                                            c="dimmed"
+                                                                        >
+                                                                            {
+                                                                                appointment.duration
+                                                                            }{' '}
+                                                                            min
+                                                                        </Text>
+                                                                    </Stack>
+
+                                                                    <Text
+                                                                        fw={700}
+                                                                    >
+                                                                        ₱
+                                                                        {appointment.price.toLocaleString()}
+                                                                    </Text>
+                                                                </Group>
+                                                            </Paper>
+                                                        </Stack>
+
+                                                    </Card>
+                                                </motion.div>
+                                            ),
+                                        )}
+                                    </Stack>
                                 )}
+
                             </Stack>
-                        )}
-                    </Stack>
-                </Card>
-            </Stack>
-        </Container>
+                        </Card>
+                    </motion.div>
+
+                </Stack>
+            </Container>
+        </motion.div>
     )
 }
 

@@ -4,17 +4,27 @@ import {
     Card,
     Container,
     Group,
+    Loader,
     Modal,
     NumberInput,
+    SimpleGrid,
     Stack,
     Switch,
-    Table,
     Text,
-    TextInput,
     Textarea,
+    TextInput,
     Title,
 } from '@mantine/core'
-
+import {
+    IconCheck,
+    IconClock,
+    IconEdit,
+    IconPlus,
+    IconTrash,
+} from '@tabler/icons-react'
+import {
+    motion,
+} from 'motion/react'
 import {
     useEffect,
     useState,
@@ -31,9 +41,7 @@ import type {
     Service,
 } from '../../services/types/service.types'
 
-
 function AdminServicesPage() {
-
     const [
         services,
         setServices,
@@ -63,7 +71,6 @@ function AdminServicesPage() {
         deletingService,
         setDeletingService,
     ] = useState<Service | null>(null)
-
 
     /*
      * FORM
@@ -104,7 +111,6 @@ function AdminServicesPage() {
         setIsActive,
     ] = useState(true)
 
-
     /*
      * ACTION STATES
      */
@@ -122,15 +128,15 @@ function AdminServicesPage() {
     const [
         updatingServiceId,
         setUpdatingServiceId,
-    ] = useState<string | null>(null)
-
+    ] = useState<string | null>(
+        null,
+    )
 
     /*
      * REALTIME SERVICES
      */
 
     useEffect(() => {
-
         const unsubscribe =
             subscribeToServices(
                 (data) => {
@@ -138,7 +144,6 @@ function AdminServicesPage() {
                     setIsLoading(false)
                 },
                 (error) => {
-
                     console.error(
                         'Failed to load services:',
                         error,
@@ -151,99 +156,85 @@ function AdminServicesPage() {
         return () => {
             unsubscribe()
         }
-
     }, [])
-
 
     /*
      * RESET FORM
      */
 
-    const resetForm =
-        () => {
-
-            setName('')
-            setDescription('')
-            setDuration(30)
-            setPrice(0)
-            setPriceLabel('')
-            setIcon('🦷')
-            setIsActive(true)
-            setEditingService(null)
-        }
-
+    const resetForm = () => {
+        setName('')
+        setDescription('')
+        setDuration(30)
+        setPrice(0)
+        setPriceLabel('')
+        setIcon('🦷')
+        setIsActive(true)
+        setEditingService(null)
+    }
 
     /*
      * ADD
      */
 
-    const handleAddService =
-        () => {
-
-            resetForm()
-
-            setIsModalOpen(true)
-        }
-
+    const handleAddService = () => {
+        resetForm()
+        setIsModalOpen(true)
+    }
 
     /*
      * EDIT
      */
 
-    const handleEditService =
-        (service: Service) => {
+    const handleEditService = (
+        service: Service,
+    ) => {
+        setEditingService(service)
 
-            setEditingService(service)
+        setName(
+            service.name,
+        )
 
-            setName(
-                service.name,
-            )
+        setDescription(
+            service.description,
+        )
 
-            setDescription(
-                service.description,
-            )
+        setDuration(
+            service.duration,
+        )
 
-            setDuration(
-                service.duration,
-            )
+        setPrice(
+            service.price,
+        )
 
-            setPrice(
-                service.price,
-            )
+        setPriceLabel(
+            service.priceLabel ??
+                `₱${service.price.toLocaleString()}`,
+        )
 
-            setPriceLabel(
-                service.priceLabel ??
-                    `₱${service.price.toLocaleString()}`,
-            )
+        setIcon(
+            service.icon,
+        )
 
-            setIcon(
-                service.icon,
-            )
+        setIsActive(
+            service.isActive,
+        )
 
-            setIsActive(
-                service.isActive,
-            )
-
-            setIsModalOpen(true)
-        }
-
+        setIsModalOpen(true)
+    }
 
     /*
      * CLOSE
      */
 
-    const handleCloseModal =
-        () => {
-
-            if (isSaving) {
-                return
-            }
-
-            setIsModalOpen(false)
-
-            resetForm()
+    const handleCloseModal = () => {
+        if (isSaving) {
+            return
         }
 
+        setIsModalOpen(false)
+        resetForm()
+    }
 
     /*
      * SAVE
@@ -251,7 +242,6 @@ function AdminServicesPage() {
 
     const handleSaveService =
         async () => {
-
             const trimmedName =
                 name.trim()
 
@@ -263,7 +253,6 @@ function AdminServicesPage() {
 
             const trimmedPriceLabel =
                 priceLabel.trim()
-
 
             if (!trimmedName) {
                 return
@@ -283,11 +272,9 @@ function AdminServicesPage() {
                 return
             }
 
-
             setIsSaving(true)
 
             try {
-
                 const serviceData = {
                     name:
                         trimmedName,
@@ -312,60 +299,47 @@ function AdminServicesPage() {
                     isActive,
                 }
 
-
                 if (editingService) {
-
                     await updateService(
                         editingService.id,
                         serviceData,
                     )
-
                 } else {
-
                     await addService(
                         serviceData,
                     )
                 }
 
-
                 setIsModalOpen(false)
-
                 resetForm()
-
             } catch (error) {
-
                 console.error(
                     'Failed to save service:',
                     error,
                 )
-
             } finally {
-
                 setIsSaving(false)
             }
         }
-
 
     /*
      * DELETE
      */
 
-    const handleDeleteClick =
-        (service: Service) => {
+    const handleDeleteClick = (
+        service: Service,
+    ) => {
+        setDeletingService(
+            service,
+        )
 
-            setDeletingService(
-                service,
-            )
-
-            setIsDeleteModalOpen(
-                true,
-            )
-        }
-
+        setIsDeleteModalOpen(
+            true,
+        )
+    }
 
     const handleCloseDeleteModal =
         () => {
-
             if (isDeleting) {
                 return
             }
@@ -379,10 +353,8 @@ function AdminServicesPage() {
             )
         }
 
-
     const handleDeleteService =
         async () => {
-
             if (!deletingService) {
                 return
             }
@@ -390,7 +362,6 @@ function AdminServicesPage() {
             setIsDeleting(true)
 
             try {
-
                 await deleteService(
                     deletingService.id,
                 )
@@ -402,20 +373,15 @@ function AdminServicesPage() {
                 setDeletingService(
                     null,
                 )
-
             } catch (error) {
-
                 console.error(
                     'Failed to delete service:',
                     error,
                 )
-
             } finally {
-
                 setIsDeleting(false)
             }
         }
-
 
     /*
      * TOGGLE ACTIVE
@@ -425,13 +391,11 @@ function AdminServicesPage() {
         async (
             service: Service,
         ) => {
-
             setUpdatingServiceId(
                 service.id,
             )
 
             try {
-
                 await updateService(
                     service.id,
                     {
@@ -439,22 +403,31 @@ function AdminServicesPage() {
                             !service.isActive,
                     },
                 )
-
             } catch (error) {
-
                 console.error(
                     'Failed to update service status:',
                     error,
                 )
-
             } finally {
-
                 setUpdatingServiceId(
                     null,
                 )
             }
         }
 
+    /*
+     * SUMMARY
+     */
+
+    const activeServices =
+        services.filter(
+            (service) =>
+                service.isActive,
+        ).length
+
+    const inactiveServices =
+        services.length -
+        activeServices
 
     return (
         <>
@@ -462,397 +435,1106 @@ function AdminServicesPage() {
                 size="xl"
                 py="xl"
             >
+                <Stack gap={32}>
 
-                <Stack gap="xl">
+                    {/* ================================================== */}
+                    {/* PAGE HEADER */}
+                    {/* ================================================== */}
 
-                    {/* HEADER */}
-
-                    <Group
-                        justify="space-between"
-                        align="center"
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 12,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            duration: 0.35,
+                        }}
                     >
-
-                        <Stack gap={4}>
-
-                            <Title order={2}>
-                                Services
-                            </Title>
-
-                            <Text
-                                c="dimmed"
-                                size="sm"
-                            >
-                                Manage the dental services
-                                available for booking.
-                            </Text>
-
-                        </Stack>
-
-
-                        <Button
-                            onClick={
-                                handleAddService
-                            }
+                        <Group
+                            justify="space-between"
+                            align="flex-end"
+                            gap="xl"
+                            wrap="wrap"
                         >
-                            Add service
-                        </Button>
+                            <Stack gap={6}>
+                                <Badge
+                                    variant="light"
+                                    color="smilehaos"
+                                    radius="xl"
+                                    w="fit-content"
+                                >
+                                    Clinic management
+                                </Badge>
 
-                    </Group>
-
-
-                    {/* TABLE */}
-
-                    <Card
-                        withBorder
-                        radius="md"
-                        padding={0}
-                    >
-
-                        {isLoading ? (
-
-                            <Stack
-                                align="center"
-                                py="xl"
-                            >
-                                <Text c="dimmed">
-                                    Loading services...
-                                </Text>
-                            </Stack>
-
-                        ) : services.length === 0 ? (
-
-                            <Stack
-                                align="center"
-                                py="xl"
-                                px="md"
-                            >
-
-                                <Text fw={600}>
-                                    No services yet
-                                </Text>
+                                <Title
+                                    order={1}
+                                    style={{
+                                        letterSpacing:
+                                            '-0.04em',
+                                    }}
+                                >
+                                    Services
+                                </Title>
 
                                 <Text
-                                    size="sm"
                                     c="dimmed"
-                                    ta="center"
+                                    size="sm"
+                                    maw={620}
                                 >
-                                    Add your first dental
-                                    service to make it
-                                    available for booking.
+                                    Manage the dental
+                                    services, pricing, and
+                                    availability patients
+                                    see when booking.
                                 </Text>
-
-                                <Button
-                                    onClick={
-                                        handleAddService
-                                    }
-                                >
-                                    Add service
-                                </Button>
-
                             </Stack>
 
-                        ) : (
-
-                            <Table
-                                striped
-                                highlightOnHover
-                                verticalSpacing="md"
+                            <Button
+                                size="md"
+                                radius="lg"
+                                leftSection={
+                                    <IconPlus
+                                        size={18}
+                                    />
+                                }
+                                onClick={
+                                    handleAddService
+                                }
                             >
+                                Add service
+                            </Button>
+                        </Group>
+                    </motion.div>
 
-                                <Table.Thead>
+                    {/* ================================================== */}
+                    {/* SUMMARY */}
+                    {/* ================================================== */}
 
-                                    <Table.Tr>
+                    <SimpleGrid
+                        cols={{
+                            base: 1,
+                            sm: 3,
+                        }}
+                        spacing="md"
+                    >
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.05,
+                                duration: 0.3,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="lg"
+                                style={{
+                                    height: '100%',
+                                }}
+                            >
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                >
+                                    <Stack gap={3}>
+                                        <Text
+                                            size="xs"
+                                            fw={700}
+                                            c="dimmed"
+                                            tt="uppercase"
+                                            style={{
+                                                letterSpacing:
+                                                    '0.07em',
+                                            }}
+                                        >
+                                            Total services
+                                        </Text>
 
-                                        <Table.Th>
-                                            Service
-                                        </Table.Th>
+                                        <Text
+                                            size="2rem"
+                                            fw={800}
+                                            lh={1}
+                                        >
+                                            {
+                                                services.length
+                                            }
+                                        </Text>
 
-                                        <Table.Th>
-                                            Duration
-                                        </Table.Th>
+                                        <Text
+                                            size="xs"
+                                            c="dimmed"
+                                        >
+                                            Services configured
+                                        </Text>
+                                    </Stack>
 
-                                        <Table.Th>
-                                            Price
-                                        </Table.Th>
+                                    <Badge
+                                        variant="light"
+                                        color="smilehaos"
+                                        radius="xl"
+                                    >
+                                        Catalog
+                                    </Badge>
+                                </Group>
+                            </Card>
+                        </motion.div>
 
-                                        <Table.Th>
-                                            Status
-                                        </Table.Th>
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.1,
+                                duration: 0.3,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="lg"
+                                style={{
+                                    height: '100%',
+                                }}
+                            >
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                >
+                                    <Stack gap={3}>
+                                        <Text
+                                            size="xs"
+                                            fw={700}
+                                            c="dimmed"
+                                            tt="uppercase"
+                                            style={{
+                                                letterSpacing:
+                                                    '0.07em',
+                                            }}
+                                        >
+                                            Active
+                                        </Text>
 
-                                        <Table.Th>
-                                            Actions
-                                        </Table.Th>
+                                        <Text
+                                            size="2rem"
+                                            fw={800}
+                                            lh={1}
+                                        >
+                                            {
+                                                activeServices
+                                            }
+                                        </Text>
 
-                                    </Table.Tr>
+                                        <Text
+                                            size="xs"
+                                            c="dimmed"
+                                        >
+                                            Available for booking
+                                        </Text>
+                                    </Stack>
 
-                                </Table.Thead>
+                                    <Badge
+                                        color="green"
+                                        variant="light"
+                                        radius="xl"
+                                    >
+                                        Active
+                                    </Badge>
+                                </Group>
+                            </Card>
+                        </motion.div>
 
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.15,
+                                duration: 0.3,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="lg"
+                                style={{
+                                    height: '100%',
+                                }}
+                            >
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                >
+                                    <Stack gap={3}>
+                                        <Text
+                                            size="xs"
+                                            fw={700}
+                                            c="dimmed"
+                                            tt="uppercase"
+                                            style={{
+                                                letterSpacing:
+                                                    '0.07em',
+                                            }}
+                                        >
+                                            Inactive
+                                        </Text>
 
-                                <Table.Tbody>
+                                        <Text
+                                            size="2rem"
+                                            fw={800}
+                                            lh={1}
+                                        >
+                                            {
+                                                inactiveServices
+                                            }
+                                        </Text>
 
-                                    {services.map(
-                                        (service) => (
+                                        <Text
+                                            size="xs"
+                                            c="dimmed"
+                                        >
+                                            Hidden from booking
+                                        </Text>
+                                    </Stack>
 
-                                            <Table.Tr
-                                                key={
-                                                    service.id
-                                                }
+                                    <Badge
+                                        color="gray"
+                                        variant="light"
+                                        radius="xl"
+                                    >
+                                        Inactive
+                                    </Badge>
+                                </Group>
+                            </Card>
+                        </motion.div>
+                    </SimpleGrid>
+
+                    {/* ================================================== */}
+                    {/* SERVICES */}
+                    {/* ================================================== */}
+
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 15,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            delay: 0.18,
+                            duration: 0.35,
+                        }}
+                    >
+                        <Card
+                            withBorder
+                            radius="xl"
+                            padding="xl"
+                        >
+                            <Stack gap="xl">
+
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                    gap="lg"
+                                    wrap="wrap"
+                                >
+                                    <Stack gap={4}>
+                                        <Group gap="sm">
+                                            <Title
+                                                order={2}
+                                                size="1.25rem"
                                             >
+                                                Service catalog
+                                            </Title>
 
-                                                <Table.Td>
+                                            <Badge
+                                                variant="light"
+                                                color="smilehaos"
+                                                radius="xl"
+                                            >
+                                                {services.length}{' '}
+                                                {services.length ===
+                                                1
+                                                    ? 'service'
+                                                    : 'services'}
+                                            </Badge>
+                                        </Group>
 
-                                                    <Group gap="sm">
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            These are the
+                                            services patients
+                                            can select during
+                                            appointment booking.
+                                        </Text>
+                                    </Stack>
 
-                                                        <Text size="xl">
-                                                            {
-                                                                service.icon
-                                                            }
-                                                        </Text>
+                                    <Button
+                                        variant="light"
+                                        radius="lg"
+                                        leftSection={
+                                            <IconPlus
+                                                size={17}
+                                            />
+                                        }
+                                        onClick={
+                                            handleAddService
+                                        }
+                                    >
+                                        Add service
+                                    </Button>
+                                </Group>
 
-                                                        <Stack gap={0}>
+                                {isLoading ? (
+                                    <Stack
+                                        align="center"
+                                        justify="center"
+                                        py={60}
+                                    >
+                                        <Loader
+                                            color="smilehaos"
+                                            size="md"
+                                        />
 
-                                                            <Text fw={600}>
-                                                                {
-                                                                    service.name
-                                                                }
-                                                            </Text>
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            Loading services...
+                                        </Text>
+                                    </Stack>
+                                ) : services.length ===
+                                  0 ? (
+                                    <Card
+                                        radius="lg"
+                                        padding={40}
+                                        style={{
+                                            background:
+                                                'var(--mantine-color-gray-0)',
+                                        }}
+                                    >
+                                        <Stack
+                                            align="center"
+                                            gap="sm"
+                                        >
+                                            <Text
+                                                size="2.5rem"
+                                            >
+                                                🦷
+                                            </Text>
 
-                                                            <Text
-                                                                size="xs"
-                                                                c="dimmed"
-                                                            >
-                                                                {
-                                                                    service.description
-                                                                }
-                                                            </Text>
+                                            <Text
+                                                fw={700}
+                                            >
+                                                No services yet
+                                            </Text>
 
-                                                        </Stack>
+                                            <Text
+                                                size="sm"
+                                                c="dimmed"
+                                                ta="center"
+                                                maw={420}
+                                            >
+                                                Add your first
+                                                dental service
+                                                to make it
+                                                available for
+                                                booking.
+                                            </Text>
 
-                                                    </Group>
-
-                                                </Table.Td>
-
-
-                                                <Table.Td>
-                                                    {
-                                                        service.duration
-                                                    }{' '}
-                                                    min
-                                                </Table.Td>
-
-
-                                                <Table.Td>
-                                                    {
-                                                        service.priceLabel ||
-                                                        `₱${service.price.toLocaleString()}`
-                                                    }
-                                                </Table.Td>
-
-
-                                                <Table.Td>
-
-                                                    <Switch
-                                                        checked={
-                                                            service.isActive
-                                                        }
-                                                        onChange={() =>
-                                                            handleToggleActive(
-                                                                service,
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            updatingServiceId ===
-                                                            service.id
-                                                        }
-                                                        label={
-                                                            <Badge
-                                                                color={
-                                                                    service.isActive
-                                                                        ? 'green'
-                                                                        : 'gray'
-                                                                }
-                                                                variant="light"
-                                                            >
-                                                                {
-                                                                    service.isActive
-                                                                        ? 'Active'
-                                                                        : 'Inactive'
-                                                                }
-                                                            </Badge>
+                                            <Button
+                                                radius="lg"
+                                                leftSection={
+                                                    <IconPlus
+                                                        size={
+                                                            17
                                                         }
                                                     />
-
-                                                </Table.Td>
-
-
-                                                <Table.Td>
-
-                                                    <Group gap="xs">
-
-                                                        <Button
-                                                            size="xs"
-                                                            variant="light"
-                                                            onClick={() =>
-                                                                handleEditService(
-                                                                    service,
-                                                                )
-                                                            }
+                                                }
+                                                onClick={
+                                                    handleAddService
+                                                }
+                                            >
+                                                Add service
+                                            </Button>
+                                        </Stack>
+                                    </Card>
+                                ) : (
+                                    <SimpleGrid
+                                        cols={{
+                                            base: 1,
+                                            sm: 2,
+                                            lg: 3,
+                                        }}
+                                        spacing="md"
+                                    >
+                                        {services.map(
+                                            (
+                                                service,
+                                                index,
+                                            ) => (
+                                                <motion.div
+                                                    key={
+                                                        service.id
+                                                    }
+                                                    initial={{
+                                                        opacity: 0,
+                                                        y: 12,
+                                                    }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        y: 0,
+                                                    }}
+                                                    transition={{
+                                                        delay:
+                                                            0.04 *
+                                                            index,
+                                                        duration:
+                                                            0.3,
+                                                    }}
+                                                    style={{
+                                                        height: '100%',
+                                                    }}
+                                                >
+                                                    <Card
+                                                        withBorder
+                                                        radius="xl"
+                                                        padding="lg"
+                                                        style={{
+                                                            height: '100%',
+                                                            display:
+                                                                'flex',
+                                                            flexDirection:
+                                                                'column',
+                                                        }}
+                                                    >
+                                                        <Stack
+                                                            gap="lg"
+                                                            style={{
+                                                                height: '100%',
+                                                            }}
                                                         >
-                                                            Edit
-                                                        </Button>
 
+                                                            {/* SERVICE HEADER */}
 
-                                                        <Button
-                                                            size="xs"
-                                                            variant="subtle"
-                                                            color="red"
-                                                            onClick={() =>
-                                                                handleDeleteClick(
-                                                                    service,
-                                                                )
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </Button>
+                                                            <Group
+                                                                justify="space-between"
+                                                                align="flex-start"
+                                                                gap="md"
+                                                                wrap="nowrap"
+                                                            >
+                                                                <Card
+                                                                    radius="lg"
+                                                                    padding="md"
+                                                                    style={{
+                                                                        background:
+                                                                            service.isActive
+                                                                                ? 'var(--mantine-color-smilehaos-0)'
+                                                                                : 'var(--mantine-color-gray-0)',
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                >
+                                                                    <Text
+                                                                        size="1.8rem"
+                                                                        lh={1}
+                                                                    >
+                                                                        {
+                                                                            service.icon
+                                                                        }
+                                                                    </Text>
+                                                                </Card>
 
-                                                    </Group>
+                                                                <Badge
+                                                                    color={
+                                                                        service.isActive
+                                                                            ? 'green'
+                                                                            : 'gray'
+                                                                    }
+                                                                    variant="light"
+                                                                    radius="xl"
+                                                                >
+                                                                    {service.isActive
+                                                                        ? 'Active'
+                                                                        : 'Inactive'}
+                                                                </Badge>
+                                                            </Group>
 
-                                                </Table.Td>
+                                                            {/* SERVICE INFO */}
 
-                                            </Table.Tr>
+                                                            <Stack
+                                                                gap={5}
+                                                                style={{
+                                                                    flex: 1,
+                                                                }}
+                                                            >
+                                                                <Text
+                                                                    fw={800}
+                                                                    size="lg"
+                                                                    style={{
+                                                                        letterSpacing:
+                                                                            '-0.02em',
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        service.name
+                                                                    }
+                                                                </Text>
 
-                                        ),
-                                    )}
+                                                                <Text
+                                                                    size="sm"
+                                                                    c="dimmed"
+                                                                    lineClamp={
+                                                                        3
+                                                                    }
+                                                                    style={{
+                                                                        lineHeight:
+                                                                            1.6,
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        service.description
+                                                                    }
+                                                                </Text>
+                                                            </Stack>
 
-                                </Table.Tbody>
+                                                            {/* SERVICE META */}
 
-                            </Table>
+                                                            <Group
+                                                                gap="xl"
+                                                            >
+                                                                <Group
+                                                                    gap="xs"
+                                                                    wrap="nowrap"
+                                                                >
+                                                                    <IconClock
+                                                                        size={
+                                                                            17
+                                                                        }
+                                                                        stroke={
+                                                                            1.8
+                                                                        }
+                                                                    />
 
-                        )}
+                                                                    <Stack
+                                                                        gap={
+                                                                            0
+                                                                        }
+                                                                    >
+                                                                        <Text
+                                                                            size="xs"
+                                                                            c="dimmed"
+                                                                        >
+                                                                            Duration
+                                                                        </Text>
 
-                    </Card>
+                                                                        <Text
+                                                                            size="sm"
+                                                                            fw={
+                                                                                700
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                service.duration
+                                                                            }{' '}
+                                                                            min
+                                                                        </Text>
+                                                                    </Stack>
+                                                                </Group>
+
+                                                                <Stack
+                                                                    gap={
+                                                                        0
+                                                                    }
+                                                                >
+                                                                    <Text
+                                                                        size="xs"
+                                                                        c="dimmed"
+                                                                    >
+                                                                        Price
+                                                                    </Text>
+
+                                                                    <Text
+                                                                        size="sm"
+                                                                        fw={
+                                                                            800
+                                                                        }
+                                                                    >
+                                                                        {service.priceLabel ||
+                                                                            `₱${service.price.toLocaleString()}`}
+                                                                    </Text>
+                                                                </Stack>
+                                                            </Group>
+
+                                                            {/* DIVIDER */}
+
+                                                            <div
+                                                                style={{
+                                                                    height: 1,
+                                                                    background:
+                                                                        'var(--mantine-color-gray-2)',
+                                                                }}
+                                                            />
+
+                                                            {/* ACTIONS */}
+
+                                                            <Stack
+                                                                gap="sm"
+                                                            >
+                                                                <Group
+                                                                    justify="space-between"
+                                                                    align="center"
+                                                                >
+                                                                    <Text
+                                                                        size="xs"
+                                                                        c="dimmed"
+                                                                    >
+                                                                        Booking
+                                                                        availability
+                                                                    </Text>
+
+                                                                    <Switch
+                                                                        size="sm"
+                                                                        checked={
+                                                                            service.isActive
+                                                                        }
+                                                                        onChange={() =>
+                                                                            handleToggleActive(
+                                                                                service,
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            updatingServiceId ===
+                                                                            service.id
+                                                                        }
+                                                                    />
+                                                                </Group>
+
+                                                                <Group
+                                                                    grow
+                                                                    gap="sm"
+                                                                >
+                                                                    <Button
+                                                                        size="sm"
+                                                                        radius="lg"
+                                                                        variant="light"
+                                                                        leftSection={
+                                                                            <IconEdit
+                                                                                size={
+                                                                                    16
+                                                                                }
+                                                                            />
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleEditService(
+                                                                                service,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Edit
+                                                                    </Button>
+
+                                                                    <Button
+                                                                        size="sm"
+                                                                        radius="lg"
+                                                                        variant="light"
+                                                                        color="red"
+                                                                        leftSection={
+                                                                            <IconTrash
+                                                                                size={
+                                                                                    16
+                                                                                }
+                                                                            />
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleDeleteClick(
+                                                                                service,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Delete
+                                                                    </Button>
+                                                                </Group>
+                                                            </Stack>
+
+                                                        </Stack>
+                                                    </Card>
+                                                </motion.div>
+                                            ),
+                                        )}
+                                    </SimpleGrid>
+                                )}
+
+                            </Stack>
+                        </Card>
+                    </motion.div>
 
                 </Stack>
-
             </Container>
 
-
-            {/* ADD / EDIT MODAL */}
+            {/* ====================================================== */}
+            {/* ADD / EDIT SERVICE MODAL */}
+            {/* ====================================================== */}
 
             <Modal
                 opened={isModalOpen}
                 onClose={
                     handleCloseModal
                 }
-                title={
-                    editingService
-                        ? 'Edit Service'
-                        : 'Add Service'
-                }
                 centered
+                size="lg"
+                radius="xl"
+                title={
+                    <Stack gap={2}>
+                        <Group gap="sm">
+                            <Title
+                                order={3}
+                                size="1.2rem"
+                            >
+                                {editingService
+                                    ? 'Edit service'
+                                    : 'Add service'}
+                            </Title>
+
+                            <Badge
+                                variant="light"
+                                color="smilehaos"
+                                radius="xl"
+                            >
+                                {editingService
+                                    ? 'Update'
+                                    : 'New'}
+                            </Badge>
+                        </Group>
+
+                        <Text
+                            size="xs"
+                            c="dimmed"
+                        >
+                            Configure how this service
+                            appears to patients.
+                        </Text>
+                    </Stack>
+                }
             >
+                <Stack gap="xl">
 
-                <Stack gap="md">
+                    {/* SERVICE PREVIEW */}
 
-                    <TextInput
-                        label="Service name"
-                        placeholder="e.g. Dental Cleaning"
-                        value={name}
-                        onChange={(event) =>
-                            setName(
-                                event.currentTarget.value,
-                            )
-                        }
-                        required
-                    />
+                    <Card
+                        radius="lg"
+                        padding="lg"
+                        style={{
+                            background:
+                                'var(--mantine-color-gray-0)',
+                        }}
+                    >
+                        <Group
+                            gap="md"
+                            align="center"
+                            wrap="nowrap"
+                        >
+                            <Card
+                                radius="lg"
+                                padding="md"
+                                style={{
+                                    background:
+                                        'var(--mantine-color-smilehaos-0)',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <Text
+                                    size="1.8rem"
+                                    lh={1}
+                                >
+                                    {icon || '🦷'}
+                                </Text>
+                            </Card>
 
+                            <Stack
+                                gap={3}
+                                style={{
+                                    minWidth: 0,
+                                }}
+                            >
+                                <Text
+                                    size="xs"
+                                    c="dimmed"
+                                    fw={700}
+                                    tt="uppercase"
+                                    style={{
+                                        letterSpacing:
+                                            '0.07em',
+                                    }}
+                                >
+                                    Patient preview
+                                </Text>
 
-                    <Textarea
-                        label="Description"
-                        placeholder="Describe the dental service..."
-                        value={description}
-                        onChange={(event) =>
-                            setDescription(
-                                event.currentTarget.value,
-                            )
-                        }
-                        autosize
-                        minRows={3}
-                    />
+                                <Text
+                                    fw={750}
+                                    size="sm"
+                                    truncate
+                                >
+                                    {name ||
+                                        'Service name'}
+                                </Text>
 
+                                <Text
+                                    size="xs"
+                                    c="dimmed"
+                                >
+                                    {priceLabel ||
+                                        (Number(price) > 0
+                                            ? `₱${Number(price).toLocaleString()}`
+                                            : 'Price')}
+                                    {' · '}
+                                    {Number(duration) >
+                                    0
+                                        ? `${duration} min`
+                                        : 'Duration'}
+                                </Text>
+                            </Stack>
+                        </Group>
+                    </Card>
 
-                    <NumberInput
-                        label="Duration"
-                        placeholder="e.g. 30"
-                        suffix=" min"
-                        min={1}
-                        value={duration}
-                        onChange={
-                            setDuration
-                        }
-                        required
-                    />
+                    {/* BASIC INFORMATION */}
 
+                    <Stack gap="md">
+                        <Text
+                            size="xs"
+                            fw={800}
+                            c="dimmed"
+                            tt="uppercase"
+                            style={{
+                                letterSpacing:
+                                    '0.08em',
+                            }}
+                        >
+                            Service information
+                        </Text>
 
-                    <NumberInput
-                        label="Starting price"
-                        placeholder="e.g. 800"
-                        prefix="₱ "
-                        min={0}
-                        thousandSeparator=","
-                        value={price}
-                        onChange={
-                            setPrice
-                        }
-                        required
-                    />
+                        <TextInput
+                            label="Service name"
+                            placeholder="e.g. Dental Cleaning"
+                            value={name}
+                            onChange={(event) =>
+                                setName(
+                                    event
+                                        .currentTarget
+                                        .value,
+                                )
+                            }
+                            required
+                        />
 
+                        <Textarea
+                            label="Description"
+                            placeholder="Describe the dental service..."
+                            value={
+                                description
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setDescription(
+                                    event
+                                        .currentTarget
+                                        .value,
+                                )
+                            }
+                            autosize
+                            minRows={3}
+                        />
+                    </Stack>
 
-                    <TextInput
-                        label="Price display"
-                        placeholder="e.g. From ₱800"
-                        description="This is what patients will see."
-                        value={priceLabel}
-                        onChange={(event) =>
-                            setPriceLabel(
-                                event.currentTarget.value,
-                            )
-                        }
-                    />
+                    {/* PRICING */}
 
+                    <Stack gap="md">
+                        <Text
+                            size="xs"
+                            fw={800}
+                            c="dimmed"
+                            tt="uppercase"
+                            style={{
+                                letterSpacing:
+                                    '0.08em',
+                            }}
+                        >
+                            Pricing & duration
+                        </Text>
 
-                    <TextInput
-                        label="Icon"
-                        placeholder="🦷"
-                        description="Use an emoji as the service icon."
-                        value={icon}
-                        onChange={(event) =>
-                            setIcon(
-                                event.currentTarget.value,
-                            )
-                        }
-                    />
+                        <Group
+                            grow
+                            align="flex-start"
+                            wrap="wrap"
+                        >
+                            <NumberInput
+                                label="Duration"
+                                placeholder="e.g. 30"
+                                suffix=" min"
+                                min={1}
+                                value={
+                                    duration
+                                }
+                                onChange={
+                                    setDuration
+                                }
+                                required
+                            />
 
+                            <NumberInput
+                                label="Starting price"
+                                placeholder="e.g. 800"
+                                prefix="₱ "
+                                min={0}
+                                thousandSeparator=","
+                                value={
+                                    price
+                                }
+                                onChange={
+                                    setPrice
+                                }
+                                required
+                            />
+                        </Group>
 
-                    <Switch
-                        label="Active"
-                        description="Active services are available for patient booking."
-                        checked={isActive}
-                        onChange={(event) =>
-                            setIsActive(
-                                event.currentTarget.checked,
-                            )
-                        }
-                    />
+                        <TextInput
+                            label="Price display"
+                            placeholder="e.g. From ₱800"
+                            description="This is the price text patients will see."
+                            value={
+                                priceLabel
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setPriceLabel(
+                                    event
+                                        .currentTarget
+                                        .value,
+                                )
+                            }
+                        />
+                    </Stack>
 
+                    {/* DISPLAY */}
+
+                    <Stack gap="md">
+                        <Text
+                            size="xs"
+                            fw={800}
+                            c="dimmed"
+                            tt="uppercase"
+                            style={{
+                                letterSpacing:
+                                    '0.08em',
+                            }}
+                        >
+                            Display settings
+                        </Text>
+
+                        <TextInput
+                            label="Icon"
+                            placeholder="🦷"
+                            description="Use an emoji as the service icon."
+                            value={icon}
+                            onChange={(
+                                event,
+                            ) =>
+                                setIcon(
+                                    event
+                                        .currentTarget
+                                        .value,
+                                )
+                            }
+                        />
+
+                        <Card
+                            withBorder
+                            radius="lg"
+                            padding="md"
+                        >
+                            <Group
+                                justify="space-between"
+                                align="center"
+                                gap="md"
+                            >
+                                <Stack gap={3}>
+                                    <Text
+                                        fw={700}
+                                        size="sm"
+                                    >
+                                        Available for
+                                        booking
+                                    </Text>
+
+                                    <Text
+                                        size="xs"
+                                        c="dimmed"
+                                        maw={420}
+                                    >
+                                        Active services
+                                        appear in the
+                                        patient booking
+                                        flow.
+                                    </Text>
+                                </Stack>
+
+                                <Switch
+                                    checked={
+                                        isActive
+                                    }
+                                    onChange={(
+                                        event,
+                                    ) =>
+                                        setIsActive(
+                                            event
+                                                .currentTarget
+                                                .checked,
+                                        )
+                                    }
+                                    label={
+                                        isActive
+                                            ? 'Active'
+                                            : 'Inactive'
+                                    }
+                                />
+                            </Group>
+                        </Card>
+                    </Stack>
+
+                    {/* ACTIONS */}
 
                     <Group
                         justify="flex-end"
-                        mt="md"
+                        gap="sm"
                     >
-
                         <Button
-                            variant="default"
+                            variant="subtle"
+                            color="gray"
+                            radius="lg"
                             onClick={
                                 handleCloseModal
                             }
@@ -863,8 +1545,19 @@ function AdminServicesPage() {
                             Cancel
                         </Button>
 
-
                         <Button
+                            radius="lg"
+                            leftSection={
+                                editingService ? (
+                                    <IconCheck
+                                        size={17}
+                                    />
+                                ) : (
+                                    <IconPlus
+                                        size={17}
+                                    />
+                                )
+                            }
                             onClick={
                                 handleSaveService
                             }
@@ -872,21 +1565,18 @@ function AdminServicesPage() {
                                 isSaving
                             }
                         >
-                            {
-                                editingService
-                                    ? 'Save changes'
-                                    : 'Save service'
-                            }
+                            {editingService
+                                ? 'Save changes'
+                                : 'Save service'}
                         </Button>
-
                     </Group>
 
                 </Stack>
-
             </Modal>
 
-
+            {/* ====================================================== */}
             {/* DELETE MODAL */}
+            {/* ====================================================== */}
 
             <Modal
                 opened={
@@ -895,43 +1585,68 @@ function AdminServicesPage() {
                 onClose={
                     handleCloseDeleteModal
                 }
-                title="Delete Service"
                 centered
-            >
-
-                <Stack gap="md">
-
-                    <Text>
-                        Are you sure you want to
-                        delete{' '}
-
-                        <Text
-                            component="span"
-                            fw={700}
+                size="sm"
+                radius="xl"
+                title={
+                    <Group gap="sm">
+                        <Badge
+                            color="red"
+                            variant="light"
+                            radius="xl"
                         >
-                            {
-                                deletingService?.name
-                            }
-                        </Text>
-                        ?
-                    </Text>
+                            Delete
+                        </Badge>
 
+                        <Title
+                            order={3}
+                            size="1.1rem"
+                        >
+                            Delete service
+                        </Title>
+                    </Group>
+                }
+            >
+                <Stack gap="xl">
 
-                    <Text
-                        size="sm"
-                        c="dimmed"
+                    <Card
+                        radius="lg"
+                        padding="lg"
+                        style={{
+                            background:
+                                'var(--mantine-color-red-0)',
+                        }}
                     >
-                        This action cannot be undone.
-                    </Text>
+                        <Stack gap="xs">
+                            <Text
+                                fw={700}
+                            >
+                                {deletingService?.name}
+                            </Text>
 
+                            <Text
+                                size="sm"
+                                c="dimmed"
+                                style={{
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                Are you sure you want
+                                to delete this service?
+                                This action cannot be
+                                undone.
+                            </Text>
+                        </Stack>
+                    </Card>
 
                     <Group
                         justify="flex-end"
-                        mt="md"
+                        gap="sm"
                     >
-
                         <Button
-                            variant="default"
+                            variant="subtle"
+                            color="gray"
+                            radius="lg"
                             onClick={
                                 handleCloseDeleteModal
                             }
@@ -942,9 +1657,14 @@ function AdminServicesPage() {
                             Cancel
                         </Button>
 
-
                         <Button
                             color="red"
+                            radius="lg"
+                            leftSection={
+                                <IconTrash
+                                    size={17}
+                                />
+                            }
                             onClick={
                                 handleDeleteService
                             }
@@ -954,13 +1674,10 @@ function AdminServicesPage() {
                         >
                             Delete service
                         </Button>
-
                     </Group>
 
                 </Stack>
-
             </Modal>
-
         </>
     )
 }

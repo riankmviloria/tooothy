@@ -63,20 +63,52 @@ const statusConfig: Record<
 }
 
 function formatTime(time: string) {
-    const [hours, minutes] = time
-        .split(':')
-        .map(Number)
+    if (
+        !time ||
+        typeof time !== 'string'
+    ) {
+        return 'Time unavailable'
+    }
 
-    const date = new Date()
+    const parts =
+        time.trim().split(':')
 
-    date.setHours(
+    if (parts.length < 2) {
+        return time
+    }
+
+    const hours = Number(parts[0])
+    const minutes = Number(parts[1])
+
+    if (
+        !Number.isInteger(hours) ||
+        !Number.isInteger(minutes) ||
+        hours < 0 ||
+        hours > 23 ||
+        minutes < 0 ||
+        minutes > 59
+    ) {
+        return time
+    }
+
+    const timeDate = new Date()
+
+    timeDate.setHours(
         hours,
         minutes,
         0,
         0,
     )
 
-    return date.toLocaleTimeString(
+    if (
+        Number.isNaN(
+            timeDate.getTime(),
+        )
+    ) {
+        return time
+    }
+
+    return timeDate.toLocaleTimeString(
         'en-US',
         {
             hour: 'numeric',
@@ -85,11 +117,22 @@ function formatTime(time: string) {
     )
 }
 
+function isValidDate(
+    date: Date | null,
+): date is Date {
+    return (
+        date instanceof Date &&
+        !Number.isNaN(
+            date.getTime(),
+        )
+    )
+}
+
 function formatDate(
     date: Date | null,
 ) {
-    if (!date) {
-        return ''
+    if (!isValidDate(date)) {
+        return 'Date unavailable'
     }
 
     return date.toLocaleDateString(
@@ -108,7 +151,7 @@ function getStatusConfig(
 ) {
     return (
         statusConfig[status] ?? {
-            label: status,
+            label: status || 'Unknown',
             color: 'gray',
         }
     )
@@ -138,6 +181,24 @@ function getStatusAccent(
     }
 }
 
+function getPatientName(
+    appointment: AdminAppointment,
+) {
+    return (
+        appointment.patient?.fullName?.trim() ||
+        'Unknown patient'
+    )
+}
+
+function getServiceName(
+    appointment: AdminAppointment,
+) {
+    return (
+        appointment.serviceName?.trim() ||
+        'Dental service'
+    )
+}
+
 export default function CalendarDayAppointmentsModal({
     opened,
     onClose,
@@ -150,6 +211,9 @@ export default function CalendarDayAppointmentsModal({
     ].sort((a, b) =>
         a.time.localeCompare(b.time),
     )
+
+    const displayDate =
+        formatDate(date)
 
     return (
         <Modal
@@ -186,7 +250,7 @@ export default function CalendarDayAppointmentsModal({
                             c="dimmed"
                             mt={3}
                         >
-                            {formatDate(date)}
+                            {displayDate}
                         </Text>
                     </Box>
                 </Group>
@@ -280,6 +344,21 @@ export default function CalendarDayAppointmentsModal({
                                     const accent =
                                         getStatusAccent(
                                             appointment.status,
+                                        )
+
+                                    const patientName =
+                                        getPatientName(
+                                            appointment,
+                                        )
+
+                                    const serviceName =
+                                        getServiceName(
+                                            appointment,
+                                        )
+
+                                    const formattedTime =
+                                        formatTime(
+                                            appointment.time,
                                         )
 
                                     return (
@@ -386,9 +465,7 @@ export default function CalendarDayAppointmentsModal({
                                                                 truncate
                                                             >
                                                                 {
-                                                                    appointment
-                                                                        .patient
-                                                                        .fullName
+                                                                    patientName
                                                                 }
                                                             </Text>
 
@@ -401,7 +478,7 @@ export default function CalendarDayAppointmentsModal({
                                                                 truncate
                                                             >
                                                                 {
-                                                                    appointment.serviceName
+                                                                    serviceName
                                                                 }
                                                             </Text>
                                                         </Box>
@@ -442,9 +519,9 @@ export default function CalendarDayAppointmentsModal({
                                                         }
                                                         c="dimmed"
                                                     >
-                                                        {formatTime(
-                                                            appointment.time,
-                                                        )}
+                                                        {
+                                                            formattedTime
+                                                        }
                                                     </Text>
 
                                                     <Text

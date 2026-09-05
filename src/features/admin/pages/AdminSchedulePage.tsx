@@ -8,12 +8,23 @@ import {
     Group,
     Loader,
     Modal,
+    SimpleGrid,
     Stack,
     Switch,
     Text,
     TextInput,
     Title,
 } from '@mantine/core'
+import {
+    IconCalendarOff,
+    IconCheck,
+    IconClock,
+    IconPlus,
+    IconTrash,
+} from '@tabler/icons-react'
+import {
+    motion,
+} from 'motion/react'
 import {
     useEffect,
     useState,
@@ -137,6 +148,7 @@ function AdminSchedulePage() {
     /*
      * TODAY
      */
+
     const today =
         (() => {
             const date =
@@ -167,6 +179,7 @@ function AdminSchedulePage() {
     /*
      * LOAD WEEKLY SCHEDULE
      */
+
     useEffect(() => {
         const unsubscribe =
             subscribeToSchedule(
@@ -196,6 +209,7 @@ function AdminSchedulePage() {
     /*
      * LOAD BLOCKED DATES
      */
+
     useEffect(() => {
         const unsubscribe =
             subscribeToBlockedDates(
@@ -229,6 +243,7 @@ function AdminSchedulePage() {
     /*
      * UPDATE DAY
      */
+
     const updateDay = (
         day: DayKey,
         updates: Partial<DaySchedule>,
@@ -247,6 +262,7 @@ function AdminSchedulePage() {
     /*
      * UPDATE PERIOD
      */
+
     const updatePeriod = (
         day: DayKey,
         periodIndex: number,
@@ -285,6 +301,7 @@ function AdminSchedulePage() {
     /*
      * ADD PERIOD
      */
+
     const addPeriod = (
         day: DayKey,
     ) => {
@@ -312,6 +329,7 @@ function AdminSchedulePage() {
     /*
      * REMOVE PERIOD
      */
+
     const removePeriod = (
         day: DayKey,
         periodIndex: number,
@@ -340,6 +358,7 @@ function AdminSchedulePage() {
     /*
      * SAVE SCHEDULE
      */
+
     const handleSaveSchedule =
         async () => {
             setSavingSchedule(true)
@@ -368,6 +387,7 @@ function AdminSchedulePage() {
     /*
      * OPEN BLOCK DATE MODAL
      */
+
     const openBlockModal =
         () => {
             setSelectedDate('')
@@ -379,6 +399,7 @@ function AdminSchedulePage() {
     /*
      * CLOSE BLOCK DATE MODAL
      */
+
     const closeBlockModal =
         () => {
             if (savingDate) {
@@ -393,6 +414,7 @@ function AdminSchedulePage() {
     /*
      * BLOCK DATE
      */
+
     const handleBlockDate =
         async () => {
             setError(null)
@@ -448,6 +470,7 @@ function AdminSchedulePage() {
     /*
      * UNBLOCK DATE
      */
+
     const handleUnblockDate =
         async (
             date: string,
@@ -483,6 +506,7 @@ function AdminSchedulePage() {
     /*
      * FORMAT DATE
      */
+
     const formatDate =
         (date: string) => {
             const value =
@@ -505,504 +529,1110 @@ function AdminSchedulePage() {
             )
         }
 
+    /*
+     * SCHEDULE SUMMARY
+     */
+
+    const openDays =
+        days.filter(
+            (day) =>
+                schedule[
+                    day.key
+                ].enabled,
+        ).length
+
+    const closedDays =
+        days.length -
+        openDays
+
     return (
         <>
             <Container
                 size="xl"
-                py="md"
+                py="xl"
             >
-                <Stack gap="xl">
+                <Stack gap={32}>
 
-                    {/* HEADER */}
+                    {/* ================================================== */}
+                    {/* PAGE HEADER */}
+                    {/* ================================================== */}
 
-                    <Group
-                        justify="space-between"
-                        align="flex-start"
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 12,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            duration: 0.35,
+                        }}
                     >
-                        <Stack gap={4}>
-                            <Title
-                                order={1}
-                                style={{
-                                    letterSpacing:
-                                        '-0.04em',
-                                }}
+                        <Group
+                            justify="space-between"
+                            align="flex-end"
+                            gap="xl"
+                            wrap="wrap"
+                        >
+                            <Stack gap={6}>
+                                <Badge
+                                    variant="light"
+                                    color="smilehaos"
+                                    radius="xl"
+                                    w="fit-content"
+                                >
+                                    Clinic management
+                                </Badge>
+
+                                <Title
+                                    order={1}
+                                    style={{
+                                        letterSpacing:
+                                            '-0.04em',
+                                    }}
+                                >
+                                    Schedule
+                                </Title>
+
+                                <Text
+                                    c="dimmed"
+                                    size="sm"
+                                    maw={620}
+                                >
+                                    Manage your regular
+                                    clinic hours and
+                                    temporarily close
+                                    specific dates when
+                                    patients cannot book.
+                                </Text>
+                            </Stack>
+
+                            <Button
+                                size="md"
+                                radius="lg"
+                                leftSection={
+                                    <IconCalendarOff
+                                        size={18}
+                                    />
+                                }
+                                onClick={
+                                    openBlockModal
+                                }
                             >
-                                Schedule
-                            </Title>
+                                Block a date
+                            </Button>
+                        </Group>
+                    </motion.div>
 
-                            <Text c="dimmed">
-                                Set your clinic's
-                                regular operating hours
-                                and blocked dates.
-                            </Text>
-                        </Stack>
-                    </Group>
-
+                    {/* ================================================== */}
                     {/* ERROR */}
+                    {/* ================================================== */}
 
                     {error && (
-                        <Card
-                            withBorder
-                            radius="lg"
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: -6,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
                         >
-                            <Text
-                                c="red"
-                                size="sm"
+                            <Card
+                                withBorder
+                                radius="lg"
+                                padding="md"
+                                style={{
+                                    borderColor:
+                                        'var(--mantine-color-red-3)',
+                                    background:
+                                        'var(--mantine-color-red-0)',
+                                }}
                             >
-                                {error}
-                            </Text>
-                        </Card>
+                                <Text
+                                    c="red"
+                                    size="sm"
+                                    fw={600}
+                                >
+                                    {error}
+                                </Text>
+                            </Card>
+                        </motion.div>
                     )}
 
-                    {/* WEEKLY SCHEDULE */}
+                    {/* ================================================== */}
+                    {/* SUMMARY */}
+                    {/* ================================================== */}
 
-                    <Card
-                        withBorder
-                        radius="xl"
-                        padding="lg"
+                    <SimpleGrid
+                        cols={{
+                            base: 1,
+                            sm: 3,
+                        }}
+                        spacing="md"
                     >
-                        <Stack gap="lg">
-
-                            <Group
-                                justify="space-between"
-                                align="flex-start"
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.05,
+                                duration: 0.3,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="lg"
+                                style={{
+                                    height: '100%',
+                                }}
                             >
-                                <Stack gap={2}>
-                                    <Title
-                                        order={2}
-                                        size="1.2rem"
-                                    >
-                                        Weekly schedule
-                                    </Title>
-
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
-                                    >
-                                        Configure the days and
-                                        hours patients can book.
-                                    </Text>
-                                </Stack>
-
-                                <Button
-                                    loading={
-                                        savingSchedule
-                                    }
-                                    onClick={
-                                        handleSaveSchedule
-                                    }
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
                                 >
-                                    Save schedule
-                                </Button>
-                            </Group>
+                                    <Stack gap={3}>
+                                        <Text
+                                            size="xs"
+                                            fw={700}
+                                            c="dimmed"
+                                            tt="uppercase"
+                                            style={{
+                                                letterSpacing:
+                                                    '0.07em',
+                                            }}
+                                        >
+                                            Open days
+                                        </Text>
 
-                            <Divider />
+                                        <Text
+                                            size="2rem"
+                                            fw={800}
+                                            lh={1}
+                                        >
+                                            {openDays}
+                                        </Text>
 
-                            {loadingSchedule ? (
-                                <Stack
-                                    align="center"
-                                    py="xl"
+                                        <Text
+                                            size="xs"
+                                            c="dimmed"
+                                        >
+                                            Days available
+                                            for booking
+                                        </Text>
+                                    </Stack>
+
+                                    <Badge
+                                        color="green"
+                                        variant="light"
+                                        radius="xl"
+                                    >
+                                        Open
+                                    </Badge>
+                                </Group>
+                            </Card>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.1,
+                                duration: 0.3,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="lg"
+                                style={{
+                                    height: '100%',
+                                }}
+                            >
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
                                 >
-                                    <Loader
-                                        color="smilehaos"
+                                    <Stack gap={3}>
+                                        <Text
+                                            size="xs"
+                                            fw={700}
+                                            c="dimmed"
+                                            tt="uppercase"
+                                            style={{
+                                                letterSpacing:
+                                                    '0.07em',
+                                            }}
+                                        >
+                                            Closed days
+                                        </Text>
+
+                                        <Text
+                                            size="2rem"
+                                            fw={800}
+                                            lh={1}
+                                        >
+                                            {closedDays}
+                                        </Text>
+
+                                        <Text
+                                            size="xs"
+                                            c="dimmed"
+                                        >
+                                            Regular weekly
+                                            closures
+                                        </Text>
+                                    </Stack>
+
+                                    <Badge
+                                        color="gray"
+                                        variant="light"
+                                        radius="xl"
+                                    >
+                                        Closed
+                                    </Badge>
+                                </Group>
+                            </Card>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{
+                                opacity: 0,
+                                y: 10,
+                            }}
+                            animate={{
+                                opacity: 1,
+                                y: 0,
+                            }}
+                            transition={{
+                                delay: 0.15,
+                                duration: 0.3,
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                padding="lg"
+                                style={{
+                                    height: '100%',
+                                }}
+                            >
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                >
+                                    <Stack gap={3}>
+                                        <Text
+                                            size="xs"
+                                            fw={700}
+                                            c="dimmed"
+                                            tt="uppercase"
+                                            style={{
+                                                letterSpacing:
+                                                    '0.07em',
+                                            }}
+                                        >
+                                            Blocked dates
+                                        </Text>
+
+                                        <Text
+                                            size="2rem"
+                                            fw={800}
+                                            lh={1}
+                                        >
+                                            {
+                                                blockedDates.length
+                                            }
+                                        </Text>
+
+                                        <Text
+                                            size="xs"
+                                            c="dimmed"
+                                        >
+                                            Additional closures
+                                        </Text>
+                                    </Stack>
+
+                                    <IconCalendarOff
+                                        size={24}
+                                        stroke={1.7}
                                     />
+                                </Group>
+                            </Card>
+                        </motion.div>
+                    </SimpleGrid>
 
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
+                    {/* ================================================== */}
+                    {/* WEEKLY SCHEDULE */}
+                    {/* ================================================== */}
+
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 15,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            delay: 0.18,
+                            duration: 0.35,
+                        }}
+                    >
+                        <Card
+                            withBorder
+                            radius="xl"
+                            padding="xl"
+                        >
+                            <Stack gap="xl">
+
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                    gap="lg"
+                                    wrap="wrap"
+                                >
+                                    <Stack gap={4}>
+                                        <Group gap="sm">
+                                            <Title
+                                                order={2}
+                                                size="1.25rem"
+                                            >
+                                                Weekly schedule
+                                            </Title>
+
+                                            <Badge
+                                                variant="light"
+                                                color="smilehaos"
+                                                radius="xl"
+                                            >
+                                                Recurring
+                                            </Badge>
+                                        </Group>
+
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            Configure the days
+                                            and hours patients
+                                            can book.
+                                        </Text>
+                                    </Stack>
+
+                                    <Button
+                                        loading={
+                                            savingSchedule
+                                        }
+                                        radius="lg"
+                                        leftSection={
+                                            <IconCheck
+                                                size={18}
+                                            />
+                                        }
+                                        onClick={
+                                            handleSaveSchedule
+                                        }
                                     >
-                                        Loading schedule...
-                                    </Text>
-                                </Stack>
-                            ) : (
-                                <Stack gap="md">
-                                    {days.map(
-                                        (
-                                            day,
-                                        ) => {
-                                            const daySchedule =
-                                                schedule[
-                                                    day.key
-                                                ]
+                                        Save schedule
+                                    </Button>
+                                </Group>
 
-                                            return (
-                                                <Card
-                                                    key={
+                                <Divider />
+
+                                {loadingSchedule ? (
+                                    <Stack
+                                        align="center"
+                                        justify="center"
+                                        py={60}
+                                    >
+                                        <Loader
+                                            color="smilehaos"
+                                            size="md"
+                                        />
+
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            Loading clinic
+                                            schedule...
+                                        </Text>
+                                    </Stack>
+                                ) : (
+                                    <Stack gap="sm">
+                                        {days.map(
+                                            (
+                                                day,
+                                                dayIndex,
+                                            ) => {
+                                                const daySchedule =
+                                                    schedule[
                                                         day.key
-                                                    }
-                                                    withBorder
-                                                    radius="lg"
-                                                    padding="md"
-                                                >
-                                                    <Stack gap="md">
+                                                    ]
 
-                                                        <Group
-                                                            justify="space-between"
-                                                            align="center"
+                                                return (
+                                                    <motion.div
+                                                        key={
+                                                            day.key
+                                                        }
+                                                        initial={{
+                                                            opacity: 0,
+                                                            y: 8,
+                                                        }}
+                                                        animate={{
+                                                            opacity: 1,
+                                                            y: 0,
+                                                        }}
+                                                        transition={{
+                                                            delay:
+                                                                0.03 *
+                                                                dayIndex,
+                                                            duration:
+                                                                0.25,
+                                                        }}
+                                                    >
+                                                        <Card
+                                                            withBorder
+                                                            radius="lg"
+                                                            padding="lg"
+                                                            style={{
+                                                                background:
+                                                                    daySchedule.enabled
+                                                                        ? undefined
+                                                                        : 'var(--mantine-color-gray-0)',
+                                                                transition:
+                                                                    'border-color 150ms ease, box-shadow 150ms ease',
+                                                            }}
                                                         >
-                                                            <Group
-                                                                gap="sm"
-                                                            >
-                                                                <Text
-                                                                    fw={700}
+                                                            <Stack gap="lg">
+
+                                                                {/* DAY HEADER */}
+
+                                                                <Group
+                                                                    justify="space-between"
+                                                                    align="center"
+                                                                    gap="md"
+                                                                    wrap="wrap"
                                                                 >
-                                                                    {
-                                                                        day.label
-                                                                    }
-                                                                </Text>
-
-                                                                <Badge
-                                                                    variant="light"
-                                                                    color={
-                                                                        daySchedule.enabled
-                                                                            ? 'green'
-                                                                            : 'gray'
-                                                                    }
-                                                                >
-                                                                    {daySchedule.enabled
-                                                                        ? 'Open'
-                                                                        : 'Closed'}
-                                                                </Badge>
-                                                            </Group>
-
-                                                            <Switch
-                                                                checked={
-                                                                    daySchedule.enabled
-                                                                }
-                                                                onChange={(
-                                                                    event,
-                                                                ) =>
-                                                                    updateDay(
-                                                                        day.key,
-                                                                        {
-                                                                            enabled:
-                                                                                event
-                                                                                    .currentTarget
-                                                                                    .checked,
-                                                                        },
-                                                                    )
-                                                                }
-                                                                label={
-                                                                    daySchedule.enabled
-                                                                        ? 'Open'
-                                                                        : 'Closed'
-                                                                }
-                                                            />
-                                                        </Group>
-
-                                                        {daySchedule.enabled && (
-                                                            <Stack gap="sm">
-                                                                {daySchedule.periods.map(
-                                                                    (
-                                                                        period,
-                                                                        periodIndex,
-                                                                    ) => (
-                                                                        <Group
-                                                                            key={
-                                                                                `${day.key}-${periodIndex}`
-                                                                            }
-                                                                            align="flex-end"
-                                                                            wrap="nowrap"
+                                                                    <Group
+                                                                        gap="sm"
+                                                                    >
+                                                                        <Stack
+                                                                            gap={2}
                                                                         >
-                                                                            <TextInput
-                                                                                type="time"
-                                                                                label={
-                                                                                    periodIndex ===
-                                                                                    0
-                                                                                        ? 'From'
-                                                                                        : undefined
-                                                                                }
-                                                                                value={
-                                                                                    period.startTime
-                                                                                }
-                                                                                onChange={(
-                                                                                    event,
-                                                                                ) =>
-                                                                                    updatePeriod(
-                                                                                        day.key,
-                                                                                        periodIndex,
-                                                                                        {
-                                                                                            startTime:
-                                                                                                event
-                                                                                                    .currentTarget
-                                                                                                    .value,
-                                                                                        },
-                                                                                    )
-                                                                                }
-                                                                                style={{
-                                                                                    flex: 1,
-                                                                                }}
-                                                                            />
-
-                                                                            <TextInput
-                                                                                type="time"
-                                                                                label={
-                                                                                    periodIndex ===
-                                                                                    0
-                                                                                        ? 'To'
-                                                                                        : undefined
-                                                                                }
-                                                                                value={
-                                                                                    period.endTime
-                                                                                }
-                                                                                onChange={(
-                                                                                    event,
-                                                                                ) =>
-                                                                                    updatePeriod(
-                                                                                        day.key,
-                                                                                        periodIndex,
-                                                                                        {
-                                                                                            endTime:
-                                                                                                event
-                                                                                                    .currentTarget
-                                                                                                    .value,
-                                                                                        },
-                                                                                    )
-                                                                                }
-                                                                                style={{
-                                                                                    flex: 1,
-                                                                                }}
-                                                                            />
-
-                                                                            <ActionIcon
-                                                                                color="red"
-                                                                                variant="light"
-                                                                                size="lg"
-                                                                                disabled={
-                                                                                    daySchedule
-                                                                                        .periods
-                                                                                        .length <=
-                                                                                    1
-                                                                                }
-                                                                                onClick={() =>
-                                                                                    removePeriod(
-                                                                                        day.key,
-                                                                                        periodIndex,
-                                                                                    )
-                                                                                }
-                                                                                aria-label="Remove time period"
+                                                                            <Text
+                                                                                fw={750}
+                                                                                size="sm"
                                                                             >
-                                                                                ×
-                                                                            </ActionIcon>
-                                                                        </Group>
-                                                                    ),
+                                                                                {
+                                                                                    day.label
+                                                                                }
+                                                                            </Text>
+
+                                                                            <Text
+                                                                                size="xs"
+                                                                                c="dimmed"
+                                                                            >
+                                                                                {daySchedule.enabled
+                                                                                    ? 'Patients can book on this day'
+                                                                                    : 'No appointments available'}
+                                                                            </Text>
+                                                                        </Stack>
+
+                                                                        <Badge
+                                                                            variant="light"
+                                                                            color={
+                                                                                daySchedule.enabled
+                                                                                    ? 'green'
+                                                                                    : 'gray'
+                                                                            }
+                                                                            radius="xl"
+                                                                        >
+                                                                            {daySchedule.enabled
+                                                                                ? 'Open'
+                                                                                : 'Closed'}
+                                                                        </Badge>
+                                                                    </Group>
+
+                                                                    <Switch
+                                                                        checked={
+                                                                            daySchedule.enabled
+                                                                        }
+                                                                        onChange={(
+                                                                            event,
+                                                                        ) =>
+                                                                            updateDay(
+                                                                                day.key,
+                                                                                {
+                                                                                    enabled:
+                                                                                        event
+                                                                                            .currentTarget
+                                                                                            .checked,
+                                                                                },
+                                                                            )
+                                                                        }
+                                                                        label={
+                                                                            daySchedule.enabled
+                                                                                ? 'Open'
+                                                                                : 'Closed'
+                                                                        }
+                                                                    />
+                                                                </Group>
+
+                                                                {/* PERIODS */}
+
+                                                                {daySchedule.enabled && (
+                                                                    <Stack gap="sm">
+
+                                                                        {daySchedule.periods.map(
+                                                                            (
+                                                                                period,
+                                                                                periodIndex,
+                                                                            ) => (
+                                                                                <motion.div
+                                                                                    key={`${day.key}-${periodIndex}`}
+                                                                                    initial={{
+                                                                                        opacity: 0,
+                                                                                    }}
+                                                                                    animate={{
+                                                                                        opacity: 1,
+                                                                                    }}
+                                                                                >
+                                                                                    <Card
+                                                                                        radius="lg"
+                                                                                        padding="md"
+                                                                                        style={{
+                                                                                            background:
+                                                                                                'var(--mantine-color-gray-0)',
+                                                                                        }}
+                                                                                    >
+                                                                                        <Group
+                                                                                            align="flex-end"
+                                                                                            wrap="nowrap"
+                                                                                            gap="sm"
+                                                                                        >
+                                                                                            <IconClock
+                                                                                                size={18}
+                                                                                                stroke={1.8}
+                                                                                                style={{
+                                                                                                    marginBottom:
+                                                                                                        9,
+                                                                                                }}
+                                                                                            />
+
+                                                                                            <TextInput
+                                                                                                type="time"
+                                                                                                label={
+                                                                                                    periodIndex ===
+                                                                                                    0
+                                                                                                        ? 'From'
+                                                                                                        : undefined
+                                                                                                }
+                                                                                                value={
+                                                                                                    period.startTime
+                                                                                                }
+                                                                                                onChange={(
+                                                                                                    event,
+                                                                                                ) =>
+                                                                                                    updatePeriod(
+                                                                                                        day.key,
+                                                                                                        periodIndex,
+                                                                                                        {
+                                                                                                            startTime:
+                                                                                                                event
+                                                                                                                    .currentTarget
+                                                                                                                    .value,
+                                                                                                        },
+                                                                                                    )
+                                                                                                }
+                                                                                                style={{
+                                                                                                    flex: 1,
+                                                                                                }}
+                                                                                            />
+
+                                                                                            <TextInput
+                                                                                                type="time"
+                                                                                                label={
+                                                                                                    periodIndex ===
+                                                                                                    0
+                                                                                                        ? 'To'
+                                                                                                        : undefined
+                                                                                                }
+                                                                                                value={
+                                                                                                    period.endTime
+                                                                                                }
+                                                                                                onChange={(
+                                                                                                    event,
+                                                                                                ) =>
+                                                                                                    updatePeriod(
+                                                                                                        day.key,
+                                                                                                        periodIndex,
+                                                                                                        {
+                                                                                                            endTime:
+                                                                                                                event
+                                                                                                                    .currentTarget
+                                                                                                                    .value,
+                                                                                                        },
+                                                                                                    )
+                                                                                                }
+                                                                                                style={{
+                                                                                                    flex: 1,
+                                                                                                }}
+                                                                                            />
+
+                                                                                            <ActionIcon
+                                                                                                color="red"
+                                                                                                variant="light"
+                                                                                                size="lg"
+                                                                                                radius="lg"
+                                                                                                disabled={
+                                                                                                    daySchedule
+                                                                                                        .periods
+                                                                                                        .length <=
+                                                                                                    1
+                                                                                                }
+                                                                                                onClick={() =>
+                                                                                                    removePeriod(
+                                                                                                        day.key,
+                                                                                                        periodIndex,
+                                                                                                    )
+                                                                                                }
+                                                                                                aria-label="Remove time period"
+                                                                                            >
+                                                                                                <IconTrash
+                                                                                                    size={
+                                                                                                        17
+                                                                                                    }
+                                                                                                />
+                                                                                            </ActionIcon>
+                                                                                        </Group>
+                                                                                    </Card>
+                                                                                </motion.div>
+                                                                            ),
+                                                                        )}
+
+                                                                        <Button
+                                                                            variant="light"
+                                                                            size="sm"
+                                                                            radius="lg"
+                                                                            w="fit-content"
+                                                                            leftSection={
+                                                                                <IconPlus
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                />
+                                                                            }
+                                                                            onClick={() =>
+                                                                                addPeriod(
+                                                                                    day.key,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Add time period
+                                                                        </Button>
+
+                                                                    </Stack>
                                                                 )}
 
+                                                            </Stack>
+                                                        </Card>
+                                                    </motion.div>
+                                                )
+                                            },
+                                        )}
+                                    </Stack>
+                                )}
+
+                            </Stack>
+                        </Card>
+                    </motion.div>
+
+                    {/* ================================================== */}
+                    {/* BLOCKED DATES */}
+                    {/* ================================================== */}
+
+                    <motion.div
+                        initial={{
+                            opacity: 0,
+                            y: 15,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            y: 0,
+                        }}
+                        transition={{
+                            delay: 0.25,
+                            duration: 0.35,
+                        }}
+                    >
+                        <Card
+                            withBorder
+                            radius="xl"
+                            padding="xl"
+                        >
+                            <Stack gap="xl">
+
+                                <Group
+                                    justify="space-between"
+                                    align="flex-start"
+                                    gap="lg"
+                                    wrap="wrap"
+                                >
+                                    <Stack gap={4}>
+                                        <Group gap="sm">
+                                            <Title
+                                                order={2}
+                                                size="1.25rem"
+                                            >
+                                                Blocked dates
+                                            </Title>
+
+                                            <Badge
+                                                variant="light"
+                                                color="red"
+                                                radius="xl"
+                                            >
+                                                Closures
+                                            </Badge>
+                                        </Group>
+
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            Temporarily close
+                                            the clinic on
+                                            specific dates.
+                                        </Text>
+                                    </Stack>
+
+                                    <Button
+                                        radius="lg"
+                                        leftSection={
+                                            <IconPlus
+                                                size={18}
+                                            />
+                                        }
+                                        onClick={
+                                            openBlockModal
+                                        }
+                                    >
+                                        Block date
+                                    </Button>
+                                </Group>
+
+                                <Divider />
+
+                                {loadingBlockedDates ? (
+                                    <Stack
+                                        align="center"
+                                        justify="center"
+                                        py={60}
+                                    >
+                                        <Loader
+                                            color="smilehaos"
+                                            size="md"
+                                        />
+
+                                        <Text
+                                            size="sm"
+                                            c="dimmed"
+                                        >
+                                            Loading blocked
+                                            dates...
+                                        </Text>
+                                    </Stack>
+                                ) : blockedDates.length ===
+                                  0 ? (
+                                    <Card
+                                        radius="lg"
+                                        padding={40}
+                                        style={{
+                                            background:
+                                                'var(--mantine-color-gray-0)',
+                                        }}
+                                    >
+                                        <Stack
+                                            align="center"
+                                            gap="sm"
+                                        >
+                                            <IconCalendarOff
+                                                size={36}
+                                                stroke={1.5}
+                                            />
+
+                                            <Stack
+                                                align="center"
+                                                gap={3}
+                                            >
+                                                <Text
+                                                    fw={700}
+                                                >
+                                                    No blocked
+                                                    dates
+                                                </Text>
+
+                                                <Text
+                                                    size="sm"
+                                                    c="dimmed"
+                                                    ta="center"
+                                                    maw={420}
+                                                >
+                                                    No additional
+                                                    clinic
+                                                    closures have
+                                                    been
+                                                    configured.
+                                                </Text>
+                                            </Stack>
+
+                                            <Button
+                                                variant="light"
+                                                radius="lg"
+                                                leftSection={
+                                                    <IconPlus
+                                                        size={
+                                                            16
+                                                        }
+                                                    />
+                                                }
+                                                onClick={
+                                                    openBlockModal
+                                                }
+                                            >
+                                                Add blocked
+                                                date
+                                            </Button>
+                                        </Stack>
+                                    </Card>
+                                ) : (
+                                    <Stack gap="sm">
+                                        {blockedDates.map(
+                                            (
+                                                blockedDate,
+                                                index,
+                                            ) => {
+                                                const isRemoving =
+                                                    removingDate ===
+                                                    blockedDate.date
+
+                                                return (
+                                                    <motion.div
+                                                        key={
+                                                            blockedDate.id
+                                                        }
+                                                        initial={{
+                                                            opacity: 0,
+                                                            y: 8,
+                                                        }}
+                                                        animate={{
+                                                            opacity: 1,
+                                                            y: 0,
+                                                        }}
+                                                        transition={{
+                                                            delay:
+                                                                0.04 *
+                                                                index,
+                                                        }}
+                                                    >
+                                                        <Card
+                                                            withBorder
+                                                            radius="lg"
+                                                            padding="lg"
+                                                        >
+                                                            <Group
+                                                                justify="space-between"
+                                                                align="center"
+                                                                gap="lg"
+                                                                wrap="wrap"
+                                                            >
+                                                                <Group
+                                                                    gap="md"
+                                                                    wrap="nowrap"
+                                                                >
+                                                                    <Card
+                                                                        radius="lg"
+                                                                        padding="sm"
+                                                                        style={{
+                                                                            background:
+                                                                                'var(--mantine-color-red-0)',
+                                                                            flexShrink: 0,
+                                                                        }}
+                                                                    >
+                                                                        <IconCalendarOff
+                                                                            size={
+                                                                                22
+                                                                            }
+                                                                            stroke={
+                                                                                1.7
+                                                                            }
+                                                                        />
+                                                                    </Card>
+
+                                                                    <Stack
+                                                                        gap={
+                                                                            3
+                                                                        }
+                                                                        style={{
+                                                                            minWidth: 0,
+                                                                        }}
+                                                                    >
+                                                                        <Group
+                                                                            gap="sm"
+                                                                        >
+                                                                            <Text
+                                                                                fw={
+                                                                                    700
+                                                                                }
+                                                                                size="sm"
+                                                                            >
+                                                                                {formatDate(
+                                                                                    blockedDate.date,
+                                                                                )}
+                                                                            </Text>
+
+                                                                            <Badge
+                                                                                size="sm"
+                                                                                color="red"
+                                                                                variant="light"
+                                                                                radius="xl"
+                                                                            >
+                                                                                Closed
+                                                                            </Badge>
+                                                                        </Group>
+
+                                                                        <Text
+                                                                            size="sm"
+                                                                            c="dimmed"
+                                                                            style={{
+                                                                                wordBreak:
+                                                                                    'break-word',
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                blockedDate.reason
+                                                                            }
+                                                                        </Text>
+                                                                    </Stack>
+                                                                </Group>
+
                                                                 <Button
-                                                                    variant="light"
                                                                     size="sm"
-                                                                    w="fit-content"
+                                                                    radius="lg"
+                                                                    variant="light"
+                                                                    color="red"
+                                                                    loading={
+                                                                        isRemoving
+                                                                    }
                                                                     onClick={() =>
-                                                                        addPeriod(
-                                                                            day.key,
+                                                                        handleUnblockDate(
+                                                                            blockedDate.date,
                                                                         )
                                                                     }
                                                                 >
-                                                                    + Add time period
+                                                                    Unblock
                                                                 </Button>
-                                                            </Stack>
-                                                        )}
-                                                    </Stack>
-                                                </Card>
-                                            )
-                                        },
-                                    )}
-                                </Stack>
-                            )}
-                        </Stack>
-                    </Card>
+                                                            </Group>
+                                                        </Card>
+                                                    </motion.div>
+                                                )
+                                            },
+                                        )}
+                                    </Stack>
+                                )}
 
-                    {/* BLOCKED DATES */}
+                            </Stack>
+                        </Card>
+                    </motion.div>
 
-                    <Card
-                        withBorder
-                        radius="xl"
-                        padding="lg"
-                    >
-                        <Stack gap="lg">
-
-                            <Group
-                                justify="space-between"
-                                align="flex-start"
-                            >
-                                <Stack gap={2}>
-                                    <Title
-                                        order={2}
-                                        size="1.2rem"
-                                    >
-                                        Blocked dates
-                                    </Title>
-
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
-                                    >
-                                        Temporarily close the
-                                        clinic on specific dates.
-                                    </Text>
-                                </Stack>
-
-                                <Button
-                                    onClick={
-                                        openBlockModal
-                                    }
-                                >
-                                    + Block date
-                                </Button>
-                            </Group>
-
-                            <Divider />
-
-                            {loadingBlockedDates ? (
-                                <Stack
-                                    align="center"
-                                    py="xl"
-                                >
-                                    <Loader
-                                        color="smilehaos"
-                                    />
-
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
-                                    >
-                                        Loading blocked
-                                        dates...
-                                    </Text>
-                                </Stack>
-                            ) : blockedDates.length ===
-                              0 ? (
-                                <Stack
-                                    align="center"
-                                    py="xl"
-                                >
-                                    <Text
-                                        size="2rem"
-                                    >
-                                        🗓️
-                                    </Text>
-
-                                    <Text
-                                        fw={600}
-                                    >
-                                        No blocked dates
-                                    </Text>
-
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
-                                        ta="center"
-                                    >
-                                        No additional clinic
-                                        closures have been
-                                        configured.
-                                    </Text>
-                                </Stack>
-                            ) : (
-                                <Stack gap="sm">
-                                    {blockedDates.map(
-                                        (
-                                            blockedDate,
-                                        ) => {
-                                            const isRemoving =
-                                                removingDate ===
-                                                blockedDate.date
-
-                                            return (
-                                                <Card
-                                                    key={
-                                                        blockedDate.id
-                                                    }
-                                                    withBorder
-                                                    radius="lg"
-                                                    padding="md"
-                                                >
-                                                    <Group
-                                                        justify="space-between"
-                                                        align="center"
-                                                        wrap="nowrap"
-                                                    >
-                                                        <Stack
-                                                            gap={4}
-                                                            style={{
-                                                                minWidth: 0,
-                                                            }}
-                                                        >
-                                                            <Text
-                                                                fw={700}
-                                                            >
-                                                                {formatDate(
-                                                                    blockedDate.date,
-                                                                )}
-                                                            </Text>
-
-                                                            <Text
-                                                                size="sm"
-                                                                c="dimmed"
-                                                            >
-                                                                {
-                                                                    blockedDate.reason
-                                                                }
-                                                            </Text>
-                                                        </Stack>
-
-                                                        <Button
-                                                            size="sm"
-                                                            variant="light"
-                                                            color="red"
-                                                            loading={
-                                                                isRemoving
-                                                            }
-                                                            onClick={() =>
-                                                                handleUnblockDate(
-                                                                    blockedDate.date,
-                                                                )
-                                                            }
-                                                        >
-                                                            Unblock
-                                                        </Button>
-                                                    </Group>
-                                                </Card>
-                                            )
-                                        },
-                                    )}
-                                </Stack>
-                            )}
-                        </Stack>
-                    </Card>
                 </Stack>
             </Container>
 
+            {/* ====================================================== */}
             {/* BLOCK DATE MODAL */}
+            {/* ====================================================== */}
 
             <Modal
-                opened={
-                    modalOpened
-                }
+                opened={modalOpened}
                 onClose={
                     closeBlockModal
                 }
-                title={
-                    <Text
-                        fw={700}
-                    >
-                        Block a date
-                    </Text>
-                }
                 centered
-            >
-                <Stack gap="lg">
+                size="md"
+                radius="xl"
+                title={
+                    <Stack gap={2}>
+                        <Text
+                            fw={800}
+                            size="lg"
+                        >
+                            Block a date
+                        </Text>
 
-                    <Text
-                        size="sm"
-                        c="dimmed"
+                        <Text
+                            size="xs"
+                            c="dimmed"
+                        >
+                            Add a temporary clinic
+                            closure.
+                        </Text>
+                    </Stack>
+                }
+            >
+                <Stack gap="xl">
+
+                    <Card
+                        radius="lg"
+                        padding="md"
+                        style={{
+                            background:
+                                'var(--mantine-color-red-0)',
+                        }}
                     >
-                        Patients will not be able to
-                        book appointments on this date.
-                    </Text>
+                        <Group
+                            gap="sm"
+                            align="flex-start"
+                            wrap="nowrap"
+                        >
+                            <IconCalendarOff
+                                size={20}
+                                stroke={1.8}
+                            />
+
+                            <Text
+                                size="sm"
+                                style={{
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                Patients will not be able
+                                to book appointments on
+                                this date.
+                            </Text>
+                        </Group>
+                    </Card>
 
                     <TextInput
                         label="Date"
+                        description="Select a date from today onward."
                         type="date"
                         value={
                             selectedDate
@@ -1022,6 +1652,7 @@ function AdminSchedulePage() {
 
                     <TextInput
                         label="Reason"
+                        description="This helps the clinic identify why the date is blocked."
                         placeholder="e.g. Holiday, dentist unavailable"
                         value={
                             reason
@@ -1039,19 +1670,35 @@ function AdminSchedulePage() {
                     />
 
                     {error && (
-                        <Text
-                            c="red"
-                            size="sm"
+                        <Card
+                            withBorder
+                            radius="lg"
+                            padding="sm"
+                            style={{
+                                borderColor:
+                                    'var(--mantine-color-red-3)',
+                            }}
                         >
-                            {error}
-                        </Text>
+                            <Text
+                                c="red"
+                                size="sm"
+                                fw={600}
+                            >
+                                {error}
+                            </Text>
+                        </Card>
                     )}
+
+                    <Divider />
 
                     <Group
                         justify="flex-end"
+                        gap="sm"
                     >
                         <Button
                             variant="subtle"
+                            color="gray"
+                            radius="lg"
                             onClick={
                                 closeBlockModal
                             }
@@ -1066,6 +1713,12 @@ function AdminSchedulePage() {
                             loading={
                                 savingDate
                             }
+                            radius="lg"
+                            leftSection={
+                                <IconCalendarOff
+                                    size={17}
+                                />
+                            }
                             onClick={
                                 handleBlockDate
                             }
@@ -1073,6 +1726,7 @@ function AdminSchedulePage() {
                             Block date
                         </Button>
                     </Group>
+
                 </Stack>
             </Modal>
         </>

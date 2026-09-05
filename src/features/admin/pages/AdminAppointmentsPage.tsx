@@ -1,64 +1,165 @@
 import {
     Badge,
-    Button,
     Card,
     Container,
-    Divider,
     Group,
-    Loader,
     Select,
     Stack,
-    Table,
     Text,
     TextInput,
     Title,
 } from '@mantine/core'
+
+import {
+    IconCalendar,
+    IconSearch,
+    IconX,
+} from '@tabler/icons-react'
+
+import { motion } from 'motion/react'
+
 import {
     useEffect,
     useMemo,
     useState,
 } from 'react'
 
-import AppointmentDetailsDrawer from '../components/AppointmentDetailsDrawer'
+import AppointmentDetailsModal from '../components/AppointmentDetailsModal'
+
+import AppointmentCalendar, {
+    type CalendarView,
+} from '../components/AppointmentCalendar'
+
+import CalendarDayAppointmentsModal from '../components/CalendarDayAppointmentsModal'
 
 import {
     subscribeToAppointments,
     updateAppointmentStatus,
-    type AdminAppointment,
-    type AppointmentStatus,
 } from '../services/appointmentAdminService'
+
+import type {
+    AdminAppointment,
+    AppointmentStatus,
+} from '../services/appointmentAdminService'
+
+
+// =============================================================
+// STATUS OPTIONS
+// =============================================================
+
+const statusOptions = [
+    {
+        value: 'all',
+        label: 'All statuses',
+    },
+    {
+        value: 'pending',
+        label: 'Pending',
+    },
+    {
+        value: 'confirmed',
+        label: 'Confirmed',
+    },
+    {
+        value: 'completed',
+        label: 'Completed',
+    },
+    {
+        value: 'cancelled',
+        label: 'Cancelled',
+    },
+]
+
+
+// =============================================================
+// DATE HELPERS
+// =============================================================
+
+function isValidDate(
+    value: Date,
+): boolean {
+    return (
+        value instanceof Date &&
+        !Number.isNaN(value.getTime())
+    )
+}
+
+
+/**
+ * Safely creates a local Date from YYYY-MM-DD.
+ *
+ * IMPORTANT:
+ * Do NOT use:
+ *
+ * new Date('2026-09-05')
+ *
+ * because JavaScript treats date-only strings as UTC.
+ */
+
+
+/**
+ * Converts a Date to the application's
+ * local YYYY-MM-DD date key.
+ */
+
+/**
+ * Safely formats the month/year displayed
+ * above the calendar.
+ */
+function formatDate(
+    date: Date,
+): string {
+    if (!isValidDate(date)) {
+        return 'Calendar'
+    }
+
+    return date.toLocaleDateString(
+        'en-US',
+        {
+            month: 'long',
+            year: 'numeric',
+        },
+    )
+}
+
+
+// =============================================================
+// COMPONENT
+// =============================================================
 
 function AdminAppointmentsPage() {
     const [
         appointments,
         setAppointments,
-    ] = useState<AdminAppointment[]>(
-        [],
-    )
+    ] = useState<
+        AdminAppointment[]
+    >([])
 
-    const [loading, setLoading] =
-        useState(true)
+    const [
+        loading,
+        setLoading,
+    ] = useState(true)
 
-    const [error, setError] =
-        useState<string | null>(
-            null,
-        )
-
-    const [search, setSearch] =
-        useState('')
+    const [
+        search,
+        setSearch,
+    ] = useState('')
 
     const [
         statusFilter,
         setStatusFilter,
-    ] = useState<string | null>(
-        'all',
-    )
+    ] = useState<string>('all')
 
     const [
-        updatingId,
-        setUpdatingId,
-    ] = useState<string | null>(
-        null,
+        calendarView,
+        setCalendarView,
+    ] = useState<CalendarView>('month')
+
+    const [
+        currentDate,
+        setCurrentDate,
+    ] = useState<Date>(() =>
+        new Date(),
     )
 
     const [
@@ -69,60 +170,70 @@ function AdminAppointmentsPage() {
             null,
         )
 
-    /*
-     * REALTIME APPOINTMENT LISTENER
-     */
+    const [
+        updatingId,
+        setUpdatingId,
+    ] =
+        useState<string | null>(null)
+
+    const [
+        overflowDate,
+        setOverflowDate,
+    ] =
+        useState<Date | null>(null)
+
+    const [
+        overflowAppointments,
+        setOverflowAppointments,
+    ] =
+        useState<AdminAppointment[]>([])
+
+
+    // =========================================================
+    // SAFE CURRENT DATE
+    // =========================================================
+
+    const safeCurrentDate =
+        useMemo(() => {
+            if (
+                isValidDate(
+                    currentDate,
+                )
+            ) {
+                return currentDate
+            }
+
+            return new Date()
+        }, [currentDate])
+
+
+    // =========================================================
+    // REALTIME APPOINTMENTS
+    // =========================================================
+
     useEffect(() => {
+        setLoading(true)
+
         const unsubscribe =
             subscribeToAppointments(
                 (data) => {
                     setAppointments(
-                        data,
+                        Array.isArray(data)
+                            ? data
+                            : [],
                     )
 
-                    setLoading(
-                        false,
-                    )
-
-                    /*
-                     * Keep selected appointment
-                     * synchronized with realtime updates.
-                     */
-                    setSelectedAppointment(
-                        (current) => {
-                            if (!current) {
-                                return null
-                            }
-
-                            const updated =
-                                data.find(
-                                    (
-                                        appointment,
-                                    ) =>
-                                        appointment.id ===
-                                        current.id,
-                                )
-
-                            return (
-                                updated ??
-                                null
-                            )
-                        },
-                    )
+                    setLoading(false)
                 },
-                (listenerError) => {
+                (error) => {
                     console.error(
-                        'Failed to listen to appointments:',
-                        listenerError,
+                        'Failed to subscribe to appointments:',
+                        error,
                     )
 
-                    setError(
-                        'Unable to load appointments.',
-                    )
+                    setAppointments([])
 
-                    setLoading(
-                        false,
-                    )
+                    setLoading(false)
                 },
             )
 
@@ -131,46 +242,11 @@ function AdminAppointmentsPage() {
         }
     }, [])
 
-    /*
-     * UPDATE APPOINTMENT STATUS
-     */
-    const handleStatusChange =
-        async (
-            appointmentId: string,
-            status: AppointmentStatus,
-        ) => {
-            setUpdatingId(
-                appointmentId,
-            )
 
-            setError(null)
+    // =========================================================
+    // FILTERING
+    // =========================================================
 
-            try {
-                await updateAppointmentStatus(
-                    appointmentId,
-                    status,
-                )
-            } catch (error) {
-                console.error(
-                    'Failed to update appointment status:',
-                    error,
-                )
-
-                setError(
-                    error instanceof Error
-                        ? error.message
-                        : 'Unable to update appointment status. Please try again.',
-                )
-            } finally {
-                setUpdatingId(
-                    null,
-                )
-            }
-        }
-
-    /*
-     * FILTER APPOINTMENTS
-     */
     const filteredAppointments =
         useMemo(() => {
             const normalizedSearch =
@@ -178,460 +254,295 @@ function AdminAppointmentsPage() {
                     .trim()
                     .toLowerCase()
 
-            return appointments
-                .filter(
-                    (
-                        appointment,
-                    ) => {
-                        if (
-                            !normalizedSearch
-                        ) {
-                            return true
-                        }
+            return appointments.filter(
+                (
+                    appointment,
+                ) => {
+                    const patient =
+                        appointment.patient
 
-                        return (
-                            appointment.patient.fullName
-                                .toLowerCase()
-                                .includes(
-                                    normalizedSearch,
-                                ) ||
-                            appointment.patient.email
-                                .toLowerCase()
-                                .includes(
-                                    normalizedSearch,
-                                ) ||
-                            appointment.patient.phone
-                                .toLowerCase()
-                                .includes(
-                                    normalizedSearch,
-                                ) ||
-                            appointment.serviceName
-                                .toLowerCase()
-                                .includes(
-                                    normalizedSearch,
-                                )
+                    const fullName =
+                        patient?.fullName
+                            ?.toLowerCase() ??
+                        ''
+
+                    const phone =
+                        patient?.phone
+                            ?.toLowerCase() ??
+                        ''
+
+                    const email =
+                        patient?.email
+                            ?.toLowerCase() ??
+                        ''
+
+                    const serviceName =
+                        appointment.serviceName
+                            ?.toLowerCase() ??
+                        ''
+
+                    const appointmentDate =
+                        appointment.date
+                            ?.toString()
+                            .trim()
+                            .toLowerCase() ??
+                        ''
+
+                    const matchesSearch =
+                        normalizedSearch ===
+                            '' ||
+                        fullName.includes(
+                            normalizedSearch,
+                        ) ||
+                        phone.includes(
+                            normalizedSearch,
+                        ) ||
+                        email.includes(
+                            normalizedSearch,
+                        ) ||
+                        serviceName.includes(
+                            normalizedSearch,
+                        ) ||
+                        appointmentDate.includes(
+                            normalizedSearch,
                         )
-                    },
-                )
-                .filter(
-                    (
-                        appointment,
-                    ) => {
-                        if (
-                            !statusFilter ||
-                            statusFilter ===
-                                'all'
-                        ) {
-                            return true
-                        }
 
-                        return (
-                            appointment.status ===
+                    const matchesStatus =
+                        statusFilter ===
+                            'all' ||
+                        appointment.status ===
                             statusFilter
-                        )
-                    },
-                )
-                .sort(
-                    (a, b) => {
-                        const dateComparison =
-                            a.date.localeCompare(
-                                b.date,
-                            )
 
-                        if (
-                            dateComparison !==
-                            0
-                        ) {
-                            return dateComparison
-                        }
-
-                        return a.time.localeCompare(
-                            b.time,
-                        )
-                    },
-                )
+                    return (
+                        matchesSearch &&
+                        matchesStatus
+                    )
+                },
+            )
         }, [
             appointments,
             search,
             statusFilter,
         ])
 
-    /*
-     * STATUS COLOR
-     */
-    const getStatusColor =
-        (
+
+    // =========================================================
+    // STATISTICS
+    // =========================================================
+
+    const totalCount =
+        appointments.length
+
+    const pendingCount =
+        appointments.filter(
+            (
+                appointment,
+            ) =>
+                appointment.status ===
+                'pending',
+        ).length
+
+    const confirmedCount =
+        appointments.filter(
+            (
+                appointment,
+            ) =>
+                appointment.status ===
+                'confirmed',
+        ).length
+
+    const completedCount =
+        appointments.filter(
+            (
+                appointment,
+            ) =>
+                appointment.status ===
+                'completed',
+        ).length
+
+
+    // =========================================================
+    // STATUS UPDATE
+    // =========================================================
+
+    const handleStatusChange =
+        async (
+            appointmentId: string,
             status: AppointmentStatus,
         ) => {
-            switch (status) {
-                case 'confirmed':
-                    return 'green'
+            try {
+                setUpdatingId(
+                    appointmentId,
+                )
 
-                case 'completed':
-                    return 'teal'
+                await updateAppointmentStatus(
+                    appointmentId,
+                    status,
+                )
 
-                case 'cancelled':
-                    return 'red'
+                setSelectedAppointment(
+                    (current) => {
+                        if (
+                            !current ||
+                            current.id !==
+                                appointmentId
+                        ) {
+                            return current
+                        }
 
-                case 'pending':
-                default:
-                    return 'yellow'
+                        return {
+                            ...current,
+                            status,
+                        }
+                    },
+                )
+            } catch (error) {
+                console.error(
+                    'Failed to update appointment status:',
+                    error,
+                )
+            } finally {
+                setUpdatingId(null)
             }
         }
 
-    /*
-     * STATUS LABEL
-     */
-    const getStatusLabel =
-        (
-            status: AppointmentStatus,
-        ) => {
-            switch (status) {
-                case 'pending':
-                    return 'Pending'
 
-                case 'confirmed':
-                    return 'Confirmed'
+    // =========================================================
+    // CALENDAR DATE CHANGE
+    // =========================================================
 
-                case 'completed':
-                    return 'Completed'
-
-                case 'cancelled':
-                    return 'Cancelled'
-            }
-        }
-
-    /*
-     * FORMAT DATE
-     */
-    const formatDate = (
-        date: string,
+    const handleDateChange = (
+        date: Date,
     ) => {
-        const value =
-            new Date(
-                `${date}T00:00:00`,
+        if (!isValidDate(date)) {
+            console.warn(
+                'Ignored invalid calendar date:',
+                date,
             )
 
-        return value.toLocaleDateString(
-            'en-US',
-            {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-            },
+            return
+        }
+
+        setCurrentDate(date)
+    }
+
+
+    // =========================================================
+    // CALENDAR OVERFLOW
+    // =========================================================
+
+    const handleMoreClick = (
+        date: Date,
+        dayAppointments: AdminAppointment[],
+    ) => {
+        if (!isValidDate(date)) {
+            console.warn(
+                'Ignored invalid overflow date:',
+                date,
+            )
+
+            return
+        }
+
+        setOverflowDate(date)
+
+        setOverflowAppointments(
+            Array.isArray(
+                dayAppointments,
+            )
+                ? dayAppointments
+                : [],
         )
     }
 
-    /*
-     * APPOINTMENT ACTIONS
-     */
-    const renderAppointmentActions =
-        (
-            appointment: AdminAppointment,
-        ) => {
-            const isUpdating =
-                updatingId ===
-                appointment.id
 
-            return (
-                <Group
-                    gap="xs"
-                    wrap="nowrap"
-                >
-                    {appointment.status ===
-                        'pending' && (
-                        <Button
-                            size="xs"
-                            color="green"
-                            variant="light"
-                            loading={
-                                isUpdating
-                            }
-                            onClick={() =>
-                                handleStatusChange(
-                                    appointment.id,
-                                    'confirmed',
-                                )
-                            }
-                        >
-                            Confirm
-                        </Button>
-                    )}
+    const closeOverflowModal =
+        () => {
+            setOverflowDate(null)
 
-                    {appointment.status ===
-                        'confirmed' && (
-                        <Button
-                            size="xs"
-                            color="teal"
-                            variant="light"
-                            loading={
-                                isUpdating
-                            }
-                            onClick={() =>
-                                handleStatusChange(
-                                    appointment.id,
-                                    'completed',
-                                )
-                            }
-                        >
-                            Complete
-                        </Button>
-                    )}
-
-                    {(
-                        appointment.status ===
-                            'pending' ||
-                        appointment.status ===
-                            'confirmed'
-                    ) && (
-                        <Button
-                            size="xs"
-                            color="red"
-                            variant="subtle"
-                            loading={
-                                isUpdating
-                            }
-                            onClick={() =>
-                                handleStatusChange(
-                                    appointment.id,
-                                    'cancelled',
-                                )
-                            }
-                        >
-                            Cancel
-                        </Button>
-                    )}
-
-                    {appointment.status ===
-                        'cancelled' && (
-                        <Button
-                            size="xs"
-                            variant="light"
-                            loading={
-                                isUpdating
-                            }
-                            onClick={() =>
-                                handleStatusChange(
-                                    appointment.id,
-                                    'pending',
-                                )
-                            }
-                        >
-                            Reopen
-                        </Button>
-                    )}
-                </Group>
+            setOverflowAppointments(
+                [],
             )
         }
 
-    /*
-     * MOBILE APPOINTMENT CARD
-     */
-    const renderMobileAppointment =
+
+    const handleOverflowAppointmentClick =
         (
             appointment: AdminAppointment,
         ) => {
-            return (
-                <Card
-                    key={
-                        appointment.id
-                    }
-                    withBorder
-                    radius="xl"
-                    padding="md"
-                    onClick={() =>
-                        setSelectedAppointment(
-                            appointment,
-                        )
-                    }
-                    style={{
-                        cursor: 'pointer',
-                    }}
-                >
-                    <Stack gap="md">
-                        <Group
-                            justify="space-between"
-                            align="flex-start"
-                            wrap="nowrap"
-                        >
-                            <Stack
-                                gap={3}
-                                style={{
-                                    minWidth: 0,
-                                }}
-                            >
-                                <Text
-                                    fw={700}
-                                    size="lg"
-                                    truncate
-                                >
-                                    {
-                                        appointment
-                                            .patient
-                                            .fullName
-                                    }
-                                </Text>
+            closeOverflowModal()
 
-                                <Text
-                                    size="sm"
-                                    c="dimmed"
-                                    truncate
-                                >
-                                    {
-                                        appointment.serviceName
-                                    }
-                                </Text>
-                            </Stack>
-
-                            <Badge
-                                color={getStatusColor(
-                                    appointment.status,
-                                )}
-                                variant="light"
-                                style={{
-                                    flexShrink: 0,
-                                }}
-                            >
-                                {getStatusLabel(
-                                    appointment.status,
-                                )}
-                            </Badge>
-                        </Group>
-
-                        <Divider />
-
-                        <Group
-                            grow
-                            align="flex-start"
-                        >
-                            <Stack gap={2}>
-                                <Text
-                                    size="xs"
-                                    c="dimmed"
-                                    fw={600}
-                                    tt="uppercase"
-                                >
-                                    Date
-                                </Text>
-
-                                <Text
-                                    size="sm"
-                                    fw={600}
-                                >
-                                    {formatDate(
-                                        appointment.date,
-                                    )}
-                                </Text>
-                            </Stack>
-
-                            <Stack gap={2}>
-                                <Text
-                                    size="xs"
-                                    c="dimmed"
-                                    fw={600}
-                                    tt="uppercase"
-                                >
-                                    Time
-                                </Text>
-
-                                <Text
-                                    size="sm"
-                                    fw={600}
-                                >
-                                    {
-                                        appointment.time
-                                    }
-                                </Text>
-                            </Stack>
-                        </Group>
-
-                        <Divider />
-
-                        <Stack gap={2}>
-                            <Text
-                                size="xs"
-                                c="dimmed"
-                                fw={600}
-                                tt="uppercase"
-                            >
-                                Contact
-                            </Text>
-
-                            <Text
-                                size="sm"
-                                truncate
-                            >
-                                {
-                                    appointment
-                                        .patient
-                                        .phone
-                                }
-                            </Text>
-
-                            <Text
-                                size="xs"
-                                c="dimmed"
-                                truncate
-                            >
-                                {
-                                    appointment
-                                        .patient
-                                        .email
-                                }
-                            </Text>
-                        </Stack>
-
-                        <Group
-                            justify="space-between"
-                        >
-                            <Text
-                                size="sm"
-                                c="dimmed"
-                            >
-                                {
-                                    appointment.duration
-                                }{' '}
-                                min
-                            </Text>
-
-                            <Text fw={700}>
-                                ₱
-                                {appointment.price.toLocaleString()}
-                            </Text>
-                        </Group>
-
-                        <Divider />
-
-                        <Group
-                            onClick={(
-                                event,
-                            ) =>
-                                event.stopPropagation()
-                            }
-                        >
-                            {renderAppointmentActions(
-                                appointment,
-                            )}
-                        </Group>
-                    </Stack>
-                </Card>
+            setSelectedAppointment(
+                appointment,
             )
         }
+
+
+    // =========================================================
+    // FILTER RESET
+    // =========================================================
+
+    const hasFilters =
+        search.trim() !== '' ||
+        statusFilter !== 'all'
+
+
+    const clearFilters = () => {
+        setSearch('')
+        setStatusFilter('all')
+    }
+
+
+    // =========================================================
+    // RENDER
+    // =========================================================
 
     return (
-        <>
-            <Container
-                size="xl"
-                py="md"
-            >
-                <Stack gap="md">
-                    <Stack gap={4}>
+        <Container
+            size="xl"
+            py={32}
+        >
+            <Stack gap={28}>
+
+                {/* ================================================= */}
+                {/* PAGE HEADER */}
+                {/* ================================================= */}
+
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 18,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.45,
+                    }}
+                >
+                    <Stack gap={5}>
+
+                        <Badge
+                            variant="light"
+                            color="blue"
+                            radius="xl"
+                            size="sm"
+                            leftSection={
+                                <IconCalendar
+                                    size={14}
+                                />
+                            }
+                        >
+                            Appointment management
+                        </Badge>
+
                         <Title
                             order={1}
+                            fw={800}
                             style={{
                                 letterSpacing:
-                                    '-0.04em',
+                                    '-0.03em',
                             }}
                         >
                             Appointments
@@ -640,37 +551,312 @@ function AdminAppointmentsPage() {
                         <Text
                             c="dimmed"
                             size="sm"
+                            maw={650}
                         >
-                            View and manage your
-                            clinic appointments.
+                            Manage your clinic
+                            schedule, review
+                            appointments, and
+                            keep track of
+                            patient visits.
                         </Text>
+
                     </Stack>
+                </motion.div>
 
-                    {error && (
-                        <Card
-                            withBorder
-                            radius="lg"
-                            padding="md"
+
+                {/* ================================================= */}
+                {/* STAT CARDS */}
+                {/* ================================================= */}
+
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 20,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.45,
+                        delay: 0.08,
+                    }}
+                >
+                    <Group
+                        align="stretch"
+                        wrap="wrap"
+                        gap="md"
+                    >
+
+                        {/* TOTAL */}
+
+                        <motion.div
+                            whileHover={{
+                                y: -3,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            style={{
+                                flex:
+                                    '1 1 220px',
+                            }}
                         >
-                            <Text
-                                c="red"
-                                size="sm"
+                            <Card
+                                withBorder
+                                radius="xl"
+                                p="lg"
+                                h="100%"
                             >
-                                {error}
-                            </Text>
-                        </Card>
-                    )}
+                                <Stack gap={4}>
+                                    <Text
+                                        size="xs"
+                                        fw={700}
+                                        tt="uppercase"
+                                        c="dimmed"
+                                    >
+                                        Total
+                                    </Text>
 
+                                    <Text
+                                        fw={800}
+                                        size="xl"
+                                    >
+                                        {
+                                            totalCount
+                                        }
+                                    </Text>
+
+                                    <Text
+                                        size="xs"
+                                        c="dimmed"
+                                    >
+                                        All
+                                        appointments
+                                    </Text>
+                                </Stack>
+                            </Card>
+                        </motion.div>
+
+
+                        {/* PENDING */}
+
+                        <motion.div
+                            whileHover={{
+                                y: -3,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            style={{
+                                flex:
+                                    '1 1 220px',
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                p="lg"
+                                h="100%"
+                            >
+                                <Stack gap={4}>
+
+                                    <Text
+                                        size="xs"
+                                        fw={700}
+                                        tt="uppercase"
+                                        c="dimmed"
+                                    >
+                                        Pending
+                                    </Text>
+
+                                    <Group gap={8}>
+                                        <Text
+                                            fw={800}
+                                            size="xl"
+                                        >
+                                            {
+                                                pendingCount
+                                            }
+                                        </Text>
+
+                                        <Badge
+                                            color="yellow"
+                                            variant="light"
+                                            size="sm"
+                                        >
+                                            Pending
+                                        </Badge>
+                                    </Group>
+
+                                    <Text
+                                        size="xs"
+                                        c="dimmed"
+                                    >
+                                        Awaiting
+                                        confirmation
+                                    </Text>
+
+                                </Stack>
+                            </Card>
+                        </motion.div>
+
+
+                        {/* CONFIRMED */}
+
+                        <motion.div
+                            whileHover={{
+                                y: -3,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            style={{
+                                flex:
+                                    '1 1 220px',
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                p="lg"
+                                h="100%"
+                            >
+                                <Stack gap={4}>
+
+                                    <Text
+                                        size="xs"
+                                        fw={700}
+                                        tt="uppercase"
+                                        c="dimmed"
+                                    >
+                                        Confirmed
+                                    </Text>
+
+                                    <Group gap={8}>
+                                        <Text
+                                            fw={800}
+                                            size="xl"
+                                        >
+                                            {
+                                                confirmedCount
+                                            }
+                                        </Text>
+
+                                        <Badge
+                                            color="blue"
+                                            variant="light"
+                                            size="sm"
+                                        >
+                                            Confirmed
+                                        </Badge>
+                                    </Group>
+
+                                    <Text
+                                        size="xs"
+                                        c="dimmed"
+                                    >
+                                        Upcoming
+                                        visits
+                                    </Text>
+
+                                </Stack>
+                            </Card>
+                        </motion.div>
+
+
+                        {/* COMPLETED */}
+
+                        <motion.div
+                            whileHover={{
+                                y: -3,
+                            }}
+                            transition={{
+                                duration: 0.2,
+                            }}
+                            style={{
+                                flex:
+                                    '1 1 220px',
+                            }}
+                        >
+                            <Card
+                                withBorder
+                                radius="xl"
+                                p="lg"
+                                h="100%"
+                            >
+                                <Stack gap={4}>
+
+                                    <Text
+                                        size="xs"
+                                        fw={700}
+                                        tt="uppercase"
+                                        c="dimmed"
+                                    >
+                                        Completed
+                                    </Text>
+
+                                    <Text
+                                        fw={800}
+                                        size="xl"
+                                    >
+                                        {
+                                            completedCount
+                                        }
+                                    </Text>
+
+                                    <Text
+                                        size="xs"
+                                        c="dimmed"
+                                    >
+                                        Finished
+                                        appointments
+                                    </Text>
+
+                                </Stack>
+                            </Card>
+                        </motion.div>
+
+                    </Group>
+                </motion.div>
+
+
+                {/* ================================================= */}
+                {/* FILTERS */}
+                {/* ================================================= */}
+
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 16,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.4,
+                        delay: 0.14,
+                    }}
+                >
                     <Card
                         withBorder
                         radius="xl"
-                        padding="md"
+                        p="md"
                     >
-                        <Stack gap="md">
+                        <Group
+                            align="flex-end"
+                            wrap="wrap"
+                        >
+
                             <TextInput
                                 label="Search"
-                                placeholder="Patient, email, phone, or service"
-                                leftSection="🔎"
+                                placeholder="Patient, service, phone, email..."
+                                leftSection={
+                                    <IconSearch
+                                        size={16}
+                                    />
+                                }
                                 value={search}
                                 onChange={(
                                     event,
@@ -681,357 +867,298 @@ function AdminAppointmentsPage() {
                                             .value,
                                     )
                                 }
+                                radius="md"
+                                style={{
+                                    flex: 1,
+                                    minWidth: 260,
+                                }}
                             />
 
                             <Select
                                 label="Status"
+                                data={
+                                    statusOptions
+                                }
                                 value={
                                     statusFilter
                                 }
-                                onChange={
-                                    setStatusFilter
-                                }
-                                data={[
-                                    {
-                                        value: 'all',
-                                        label: 'All statuses',
-                                    },
-                                    {
-                                        value: 'pending',
-                                        label: 'Pending',
-                                    },
-                                    {
-                                        value: 'confirmed',
-                                        label: 'Confirmed',
-                                    },
-                                    {
-                                        value: 'completed',
-                                        label: 'Completed',
-                                    },
-                                    {
-                                        value: 'cancelled',
-                                        label: 'Cancelled',
-                                    },
-                                ]}
-                            />
-                        </Stack>
-                    </Card>
-
-                    <Stack
-                        gap="sm"
-                        hiddenFrom="sm"
-                    >
-                        {loading ? (
-                            <Card
-                                withBorder
-                                radius="xl"
-                                padding="xl"
-                            >
-                                <Stack align="center">
-                                    <Loader color="smilehaos" />
-
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
-                                    >
-                                        Loading appointments...
-                                    </Text>
-                                </Stack>
-                            </Card>
-                        ) : filteredAppointments.length ===
-                          0 ? (
-                            <Card
-                                withBorder
-                                radius="xl"
-                                padding="xl"
-                            >
-                                <Stack align="center">
-                                    <Text fw={600}>
-                                        No appointments
-                                        found
-                                    </Text>
-
-                                    <Text
-                                        size="sm"
-                                        c="dimmed"
-                                        ta="center"
-                                    >
-                                        Try changing
-                                        your search
-                                        or filters.
-                                    </Text>
-                                </Stack>
-                            </Card>
-                        ) : (
-                            filteredAppointments.map(
-                                (
-                                    appointment,
+                                onChange={(
+                                    value,
                                 ) =>
-                                    renderMobileAppointment(
-                                        appointment,
-                                    ),
-                            )
-                        )}
-                    </Stack>
+                                    setStatusFilter(
+                                        value ??
+                                            'all',
+                                    )
+                                }
+                                radius="md"
+                                w={190}
+                            />
 
-                    <Card
-                        withBorder
-                        radius="xl"
-                        padding={0}
-                        visibleFrom="sm"
-                        style={{
-                            overflow:
-                                'hidden',
-                        }}
-                    >
-                        {loading ? (
-                            <Stack
-                                align="center"
-                                py="xl"
-                            >
-                                <Loader color="smilehaos" />
+                            {hasFilters && (
+                                <Badge
+                                    component="button"
+                                    type="button"
+                                    variant="light"
+                                    color="gray"
+                                    size="lg"
+                                    radius="md"
+                                    leftSection={
+                                        <IconX
+                                            size={14}
+                                        />
+                                    }
+                                    style={{
+                                        cursor:
+                                            'pointer',
+                                        border: 0,
+                                        height: 36,
+                                    }}
+                                    onClick={
+                                        clearFilters
+                                    }
+                                >
+                                    Clear filters
+                                </Badge>
+                            )}
+
+                        </Group>
+                    </Card>
+                </motion.div>
+
+
+                {/* ================================================= */}
+                {/* CALENDAR */}
+                {/* ================================================= */}
+
+                <motion.div
+                    initial={{
+                        opacity: 0,
+                        y: 20,
+                    }}
+                    animate={{
+                        opacity: 1,
+                        y: 0,
+                    }}
+                    transition={{
+                        duration: 0.45,
+                        delay: 0.2,
+                    }}
+                >
+                    <Stack gap={8}>
+
+                        <Group
+                            justify="space-between"
+                            align="center"
+                        >
+                            <Stack gap={2}>
+
+                                <Title
+                                    order={3}
+                                    fw={750}
+                                >
+                                    Calendar
+                                </Title>
 
                                 <Text
                                     size="sm"
                                     c="dimmed"
                                 >
-                                    Loading appointments...
+                                    {formatDate(
+                                        safeCurrentDate,
+                                    )}
                                 </Text>
+
                             </Stack>
-                        ) : filteredAppointments.length ===
-                          0 ? (
+
+                            <Badge
+                                variant="light"
+                                color="gray"
+                                radius="xl"
+                            >
+                                {
+                                    filteredAppointments.length
+                                }{' '}
+                                appointment
+                                {filteredAppointments.length !==
+                                1
+                                    ? 's'
+                                    : ''}
+                            </Badge>
+
+                        </Group>
+
+
+                        <AppointmentCalendar
+                            appointments={
+                                filteredAppointments
+                            }
+                            currentDate={
+                                safeCurrentDate
+                            }
+                            view={
+                                calendarView
+                            }
+                            onDateChange={
+                                handleDateChange
+                            }
+                            onViewChange={
+                                setCalendarView
+                            }
+                            onAppointmentClick={
+                                setSelectedAppointment
+                            }
+                            onMoreClick={
+                                handleMoreClick
+                            }
+                        />
+
+                    </Stack>
+                </motion.div>
+
+
+                {/* ================================================= */}
+                {/* LOADING */}
+                {/* ================================================= */}
+
+                {loading && (
+                    <Text
+                        size="sm"
+                        c="dimmed"
+                        ta="center"
+                    >
+                        Loading
+                        appointments...
+                    </Text>
+                )}
+
+
+                {/* ================================================= */}
+                {/* FILTERED EMPTY */}
+                {/* ================================================= */}
+
+                {!loading &&
+                    appointments.length >
+                        0 &&
+                    filteredAppointments.length ===
+                        0 && (
+                        <Card
+                            withBorder
+                            radius="xl"
+                            p="xl"
+                        >
                             <Stack
                                 align="center"
-                                py="xl"
+                                gap="xs"
                             >
-                                <Text fw={600}>
-                                    No appointments
+
+                                <Text
+                                    fw={700}
+                                    size="lg"
+                                >
+                                    No
+                                    appointments
                                     found
                                 </Text>
 
                                 <Text
                                     size="sm"
                                     c="dimmed"
+                                    ta="center"
                                 >
                                     Try changing
                                     your search
-                                    or filters.
+                                    or status
+                                    filter.
                                 </Text>
+
                             </Stack>
-                        ) : (
-                            <Table.ScrollContainer
-                                minWidth={1100}
-                            >
-                                <Table
-                                    verticalSpacing="md"
-                                    horizontalSpacing="lg"
-                                    highlightOnHover
-                                >
-                                    <Table.Thead>
-                                        <Table.Tr>
-                                            <Table.Th>
-                                                Date
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Time
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Patient
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Service
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Contact
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Price
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Status
-                                            </Table.Th>
-                                            <Table.Th>
-                                                Actions
-                                            </Table.Th>
-                                        </Table.Tr>
-                                    </Table.Thead>
-
-                                    <Table.Tbody>
-                                        {filteredAppointments.map(
-                                            (
-                                                appointment,
-                                            ) => (
-                                                <Table.Tr
-                                                    key={
-                                                        appointment.id
-                                                    }
-                                                    style={{
-                                                        cursor: 'pointer',
-                                                    }}
-                                                    onClick={() =>
-                                                        setSelectedAppointment(
-                                                            appointment,
-                                                        )
-                                                    }
-                                                >
-                                                    <Table.Td>
-                                                        <Text fw={600}>
-                                                            {
-                                                                appointment.date
-                                                            }
-                                                        </Text>
-                                                    </Table.Td>
-
-                                                    <Table.Td>
-                                                        <Stack gap={0}>
-                                                            <Text fw={600}>
-                                                                {
-                                                                    appointment.time
-                                                                }
-                                                            </Text>
-
-                                                            <Text
-                                                                size="xs"
-                                                                c="dimmed"
-                                                            >
-                                                                {
-                                                                    appointment.duration
-                                                                }{' '}
-                                                                min
-                                                            </Text>
-                                                        </Stack>
-                                                    </Table.Td>
-
-                                                    <Table.Td>
-                                                        <Stack gap={2}>
-                                                            <Text fw={600}>
-                                                                {
-                                                                    appointment
-                                                                        .patient
-                                                                        .fullName
-                                                                }
-                                                            </Text>
-
-                                                            {appointment
-                                                                .patient
-                                                                .notes && (
-                                                                <Text
-                                                                    size="xs"
-                                                                    c="dimmed"
-                                                                    maw={220}
-                                                                    truncate
-                                                                >
-                                                                    {
-                                                                        appointment
-                                                                            .patient
-                                                                            .notes
-                                                                    }
-                                                                </Text>
-                                                            )}
-                                                        </Stack>
-                                                    </Table.Td>
-
-                                                    <Table.Td>
-                                                        <Text size="sm">
-                                                            {
-                                                                appointment.serviceName
-                                                            }
-                                                        </Text>
-                                                    </Table.Td>
-
-                                                    <Table.Td>
-                                                        <Stack gap={2}>
-                                                            <Text size="sm">
-                                                                {
-                                                                    appointment
-                                                                        .patient
-                                                                        .phone
-                                                                }
-                                                            </Text>
-
-                                                            <Text
-                                                                size="xs"
-                                                                c="dimmed"
-                                                            >
-                                                                {
-                                                                    appointment
-                                                                        .patient
-                                                                        .email
-                                                                }
-                                                            </Text>
-                                                        </Stack>
-                                                    </Table.Td>
-
-                                                    <Table.Td>
-                                                        <Text fw={600}>
-                                                            ₱
-                                                            {appointment.price.toLocaleString()}
-                                                        </Text>
-                                                    </Table.Td>
-
-                                                    <Table.Td>
-                                                        <Badge
-                                                            color={getStatusColor(
-                                                                appointment.status,
-                                                            )}
-                                                            variant="light"
-                                                        >
-                                                            {getStatusLabel(
-                                                                appointment.status,
-                                                            )}
-                                                        </Badge>
-                                                    </Table.Td>
-
-                                                    <Table.Td
-                                                        onClick={(
-                                                            event,
-                                                        ) =>
-                                                            event.stopPropagation()
-                                                        }
-                                                    >
-                                                        {renderAppointmentActions(
-                                                            appointment,
-                                                        )}
-                                                    </Table.Td>
-                                                </Table.Tr>
-                                            ),
-                                        )}
-                                    </Table.Tbody>
-                                </Table>
-                            </Table.ScrollContainer>
-                        )}
-                    </Card>
-
-                    {!loading && (
-                        <Text
-                            size="sm"
-                            c="dimmed"
-                        >
-                            Showing{' '}
-                            <strong>
-                                {
-                                    filteredAppointments.length
-                                }
-                            </strong>{' '}
-                            of{' '}
-                            <strong>
-                                {
-                                    appointments.length
-                                }
-                            </strong>{' '}
-                            appointments
-                        </Text>
+                        </Card>
                     )}
-                </Stack>
-            </Container>
 
-            <AppointmentDetailsDrawer
+
+                {/* ================================================= */}
+                {/* NO APPOINTMENTS */}
+                {/* ================================================= */}
+
+                {!loading &&
+                    appointments.length ===
+                        0 && (
+                        <Card
+                            withBorder
+                            radius="xl"
+                            p={40}
+                        >
+                            <Stack
+                                align="center"
+                                gap="xs"
+                            >
+
+                                <IconCalendar
+                                    size={36}
+                                    stroke={1.5}
+                                />
+
+                                <Text
+                                    fw={700}
+                                    size="lg"
+                                >
+                                    No
+                                    appointments
+                                    yet
+                                </Text>
+
+                                <Text
+                                    size="sm"
+                                    c="dimmed"
+                                    ta="center"
+                                >
+                                    Appointments
+                                    will appear
+                                    here once
+                                    patients
+                                    start
+                                    booking.
+                                </Text>
+
+                            </Stack>
+                        </Card>
+                    )}
+
+            </Stack>
+
+
+            {/* ===================================================== */}
+            {/* CALENDAR OVERFLOW MODAL */}
+            {/* ===================================================== */}
+
+            <CalendarDayAppointmentsModal
+                opened={
+                    overflowDate !== null
+                }
+                onClose={
+                    closeOverflowModal
+                }
+                date={overflowDate}
+                appointments={
+                    overflowAppointments
+                }
+                onAppointmentClick={
+                    handleOverflowAppointmentClick
+                }
+            />
+
+
+            {/* ===================================================== */}
+            {/* APPOINTMENT DETAILS MODAL */}
+            {/* ===================================================== */}
+
+            <AppointmentDetailsModal
                 appointment={
                     selectedAppointment
                 }
                 opened={
                     selectedAppointment !==
-                    null
+                        null
                 }
                 onClose={() =>
                     setSelectedAppointment(
@@ -1045,8 +1172,10 @@ function AdminAppointmentsPage() {
                     updatingId
                 }
             />
-        </>
+
+        </Container>
     )
 }
+
 
 export default AdminAppointmentsPage
